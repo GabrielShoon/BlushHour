@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+/* BlushHour tokens: golden-hour cream, blush rose, plum ink. */
+:root {
+  --bg: #fff8f3;
+  --surface: #ffffff;
+  --surface-2: #fdeef0;
+  --ink: #2a1023;
+  --ink-soft: #6b4a5e;
+  --line: #f1dce3;
+  --rose: #c2255c;
+  --rose-ink: #ffffff;
+  --rose-soft: #ffe3ea;
+  --apricot: #ffb38a;
+  --gold: #f6c36b;
+  --sage: #a8d0ad;
+  --sky: #b4cff2;
+  --plum: #b996d6;
+  --danger: #b42318;
+  --shadow: 0 1px 2px rgb(42 16 35 / 0.06), 0 8px 24px -12px rgb(42 16 35 / 0.18);
+  --shadow-lg: 0 2px 4px rgb(42 16 35 / 0.06), 0 24px 48px -16px rgb(42 16 35 / 0.28);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #170d14;
+    --surface: #22141d;
+    --surface-2: #2c1a25;
+    --ink: #fbeff3;
+    --ink-soft: #d2b8c6;
+    --line: #3d2834;
+    --rose: #ff7aa2;
+    --rose-ink: #2a0a17;
+    --rose-soft: #3a1b29;
+    --apricot: #c97a52;
+    --gold: #b88a3c;
+    --sage: #557a5b;
+    --sky: #4b6a94;
+    --plum: #7a5a96;
+    --danger: #ff8a80;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 48px -16px rgb(0 0 0 / 0.7);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-rose: var(--rose);
+  --color-rose-ink: var(--rose-ink);
+  --color-rose-soft: var(--rose-soft);
+  --color-apricot: var(--apricot);
+  --color-gold: var(--gold);
+  --color-sage: var(--sage);
+  --color-sky: var(--sky);
+  --color-plum: var(--plum);
+  --color-danger: var(--danger);
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: var(--shadow);
+  --shadow-lift: var(--shadow-lg);
+  --radius-card: 1.25rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 3px solid var(--rose);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+button,
+a,
+summary,
+[role="button"],
+select,
+label[for] {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Paper grain on hero surfaces. */
+.grain {
+  background-image: radial-gradient(rgb(42 16 35 / 0.05) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-6px) rotate(var(--r, 0deg));
+  }
+}
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Leaflet tweaks to match the theme. */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--surface-2);
+}
+.bh-pin {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px 999px 999px 0;
+  transform: rotate(-45deg);
+  background: var(--rose);
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.25);
+}
+.bh-pin span {
+  transform: rotate(45deg);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+}
+.bh-pin.muted {
+  background: #8a6b7d;
+  width: 22px;
+  height: 22px;
+}
