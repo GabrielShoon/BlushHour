@@ -4,10 +4,10 @@ import { MagnifyingGlass, Plus, X } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/app-state";
 import { Photo } from "@/components/photo";
-import { CATEGORY_BY_ID, PRICE_LABEL } from "@/data/categories";
+import { CATEGORY_BY_ID } from "@/data/categories";
 import { placePhoto } from "@/data/photos";
 import { PLACES } from "@/data/places";
-import { alternatives, distanceKm, formatSGD, nearby } from "@/lib/itinerary";
+import { alternatives, costLabel, distanceKm, nearby } from "@/lib/itinerary";
 import type { Place } from "@/lib/types";
 
 /**
@@ -76,7 +76,7 @@ export function PlacePicker({
           <span className="min-w-0 flex-1">
             <span className="block truncate font-display text-xl leading-tight">{p.name}</span>
             <span className="block truncate text-sm text-ink-soft">
-              {CATEGORY_BY_ID[p.category].label} · {p.area} · {PRICE_LABEL[p.priceLevel]} ~{formatSGD(p.costPerPerson)}
+              {CATEGORY_BY_ID[p.category].label} · {p.area} · {costLabel(p)}
               {d != null && ` · ${d.toFixed(1)} km`}
             </span>
           </span>

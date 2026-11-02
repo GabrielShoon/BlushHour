@@ -1,5 +1,6 @@
 import {
   Bank,
+  BowlFood,
   Camera,
   Coffee,
   ForkKnife,
@@ -20,6 +21,7 @@ import type { Category, CategoryId } from "@/lib/types";
 
 const ICONS: Record<string, Icon> = {
   Bank,
+  BowlFood,
   Camera,
   Coffee,
   ForkKnife,

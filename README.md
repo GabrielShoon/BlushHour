@@ -45,7 +45,7 @@ Import the GitHub repo in Vercel, add the two `NEXT_PUBLIC_SUPABASE_*` env vars,
 
 | Path | What it is |
 | --- | --- |
-| `src/data/places.ts` | The catalogue (89 places) from `knowledge/Activities.docx` and `knowledge/Food.docx`, plus a few BlushHour additions |
+| `src/data/places.ts` | The catalogue (84 places) from `knowledge/Activities.docx` and `knowledge/Food.docx`, plus a few BlushHour additions |
 | `src/data/suggested-dates.ts` | Curated date ideas that open in the builder |
 | `src/data/collections.ts` | Themed shelves (Golden hour, Rainy-day plans…) used on Explore and the home page |
 | `src/data/photos.ts` | Unsplash photo picks per category, landmark and date idea |

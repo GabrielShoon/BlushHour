@@ -78,14 +78,14 @@ export const SUGGESTED_DATES: SuggestedDate[] = [
     title: "First date, easy mode",
     tagline: "Low pressure, lots to talk about",
     description:
-      "A gallery to give you something to talk about, a stroll through Haji Lane, then cocktails with a view. Easy to cut short or stretch out.",
+      "A gallery to give you something to talk about, a wander down Haji Lane, then fried chicken and drinks round the corner at Kiap Kiap. Easy to cut short or stretch out.",
     moods: ["chill", "lowkey"],
     occasions: ["first-date"],
     startTime: "16:00",
     stops: [
       { slug: "national-museum-of-singapore" },
-      { slug: "haji-lane-stroll" },
-      { slug: "smoke-and-mirrors" },
+      { slug: "haji-lane" },
+      { slug: "kiap-kiap-chicken-club-and-bar" },
     ],
     hue: "sage",
   },

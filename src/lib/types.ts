@@ -11,6 +11,7 @@ export type CategoryId =
   | "photobooths"
   | "outdoors"
   | "dining"
+  | "casual"
   | "bars"
   | "cafes"
   | "desserts"
@@ -47,8 +48,6 @@ export interface Place {
   costPerPerson: number;
   durationMins: number;
   blurb: string;
-  /** The curator's own note from the original activity list. */
-  note?: string;
   cuisine?: string;
   vibes: Vibe[];
   timeOfDay: TimeOfDay;

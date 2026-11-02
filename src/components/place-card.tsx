@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { CATEGORY_BY_ID, PRICE_LABEL } from "@/data/categories";
+import { CATEGORY_BY_ID } from "@/data/categories";
 import { placePhoto } from "@/data/photos";
-import { formatDuration } from "@/lib/itinerary";
+import { costLabel } from "@/lib/itinerary";
 import type { Place } from "@/lib/types";
 import { Photo } from "./photo";
 import { AddToDateButton, FavoriteButton } from "./place-actions";
@@ -46,7 +46,7 @@ export function PlaceCard({
         </Link>
       </h3>
       <p className="mt-1 text-sm text-ink-soft tabular">
-        {PRICE_LABEL[place.priceLevel]} · {formatDuration(place.durationMins)}
+        {costLabel(place)}
       </p>
     </article>
   );

@@ -141,3 +141,8 @@ export function budgetBand(perPerson: number) {
   if (perPerson <= 300) return "150-300";
   return "splurge";
 }
+
+/** The per-person estimate shown on cards and detail pages. */
+export function costLabel(place: Place) {
+  return place.costPerPerson === 0 ? "Free" : `About ${formatSGD(place.costPerPerson)} per person`;
+}

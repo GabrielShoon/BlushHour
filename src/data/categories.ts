@@ -11,6 +11,7 @@ export const CATEGORIES: Category[] = [
   { id: "photobooths", label: "Photobooths", kind: "activity", icon: "Camera", hue: "rose" },
   { id: "outdoors", label: "Free & outdoors", kind: "activity", icon: "Tree", hue: "sage" },
   { id: "dining", label: "Date-night dining", kind: "food", icon: "ForkKnife", hue: "apricot" },
+  { id: "casual", label: "Casual dining", kind: "food", icon: "BowlFood", hue: "sage" },
   { id: "bars", label: "Bars", kind: "food", icon: "Martini", hue: "plum" },
   { id: "cafes", label: "Cafés", kind: "food", icon: "Coffee", hue: "gold" },
   { id: "desserts", label: "Desserts", kind: "food", icon: "IceCream", hue: "rose" },

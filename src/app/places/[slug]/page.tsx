@@ -6,11 +6,11 @@ import { Photo } from "@/components/photo";
 import { PlaceMap } from "@/components/place-map";
 import { AddToDateButton, FavoriteButton } from "@/components/place-actions";
 import { PlaceCard } from "@/components/place-card";
-import { CATEGORY_BY_ID, PRICE_LABEL, VIBES } from "@/data/categories";
+import { CATEGORY_BY_ID, VIBES } from "@/data/categories";
 import { placePhoto } from "@/data/photos";
 import { PLACE_BY_SLUG, PLACES } from "@/data/places";
 import { SUGGESTED_DATES } from "@/data/suggested-dates";
-import { formatDuration, formatSGD, nearby } from "@/lib/itinerary";
+import { costLabel, formatDuration, nearby } from "@/lib/itinerary";
 
 export function generateStaticParams() {
   return PLACES.map((p) => ({ slug: p.slug }));
@@ -26,6 +26,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   const place = PLACE_BY_SLUG[(await params).slug];
   if (!place) notFound();
   const cat = CATEGORY_BY_ID[place.category];
+  const photo = placePhoto(place);
   const pairWith = nearby(place, 4, (p) => p.kind !== place.kind);
   const alsoNearby = nearby(place, 4, (p) => p.kind === place.kind);
   const inIdeas = SUGGESTED_DATES.filter((d) => d.stops.some((s) => s.slug === place.slug));
@@ -36,9 +37,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   const facts: [string, string][] = [
     [
       "Price",
-      place.priceLevel === 0
-        ? "Free"
-        : `${PRICE_LABEL[place.priceLevel]} · about ${formatSGD(place.costPerPerson)} per person`,
+      costLabel(place),
     ],
     ["Time to allow", formatDuration(place.durationMins)],
     ["Where", place.branches ? `${place.area} · also ${place.branches.filter((b) => b !== place.area).join(", ")}` : place.area],
@@ -61,9 +60,11 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
       <div className="mt-4 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
         <figure>
           <div className="photo-grade aspect-[4/5] overflow-hidden rounded-card sm:aspect-[5/4] lg:aspect-[4/5]">
-            <Photo photo={placePhoto(place)} priority sizes="(min-width: 1024px) 55vw, 100vw" />
+            <Photo photo={photo} priority sizes="(min-width: 1024px) 55vw, 100vw" />
           </div>
-          <figcaption className="mt-2 text-xs text-ink-soft">Photo: Unsplash. Sets the mood; may not be this exact venue.</figcaption>
+          {photo.kind === "unsplash" && (
+            <figcaption className="mt-2 text-xs text-ink-soft">Photo: Unsplash. Sets the mood; may not be this exact venue.</figcaption>
+          )}
         </figure>
 
         <div className="lg:pt-6">
@@ -93,13 +94,6 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
             <AddToDateButton place={place} variant="primary" className="flex-1 sm:flex-none" />
             <FavoriteButton place={place} className="size-12 border border-line" />
           </div>
-
-          {place.note && (
-            <blockquote className="mt-10 border-l-2 border-rose pl-5">
-              <p className="font-display text-2xl italic leading-snug">“{place.note}”</p>
-              <footer className="eyebrow mt-3">Curator&apos;s note</footer>
-            </blockquote>
-          )}
 
           <dl className="mt-10 border-t border-ink">
             {facts.map(([label, value]) => (

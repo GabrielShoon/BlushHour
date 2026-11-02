@@ -37,11 +37,12 @@ import { useApp } from "@/components/app-state";
 import { CategoryIcon } from "@/components/icons";
 import { Photo } from "@/components/photo";
 import { MapView } from "@/components/map";
-import { CATEGORY_BY_ID, PRICE_LABEL } from "@/data/categories";
+import { CATEGORY_BY_ID } from "@/data/categories";
 import { placePhoto } from "@/data/photos";
 import { PLACE_BY_SLUG } from "@/data/places";
 import { SUGGESTED_DATES } from "@/data/suggested-dates";
 import {
+  costLabel,
   formatDuration,
   formatSGD,
   formatTime,
@@ -117,7 +118,7 @@ function StopCard({
                 </span>
                 <span>{s.place.area}</span>
                 <span className="tabular">
-                  {PRICE_LABEL[s.place.priceLevel]} · ~{formatSGD(s.place.costPerPerson)} pp
+                  {costLabel(s.place)}
                 </span>
               </p>
             </div>

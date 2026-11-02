@@ -37,6 +37,12 @@ export interface ExploreState {
   budget: string;
 }
 
+const KINDS = [
+  ["all", "Everything"],
+  ["activity", "Things to do"],
+  ["food", "Food & drinks"],
+] as const;
+
 const PLACE_RESET: Partial<ExploreState> = {
   q: "",
   kind: "all",
@@ -60,7 +66,7 @@ function matches(p: Place, f: ExploreState) {
   if (f.time && p.timeOfDay !== "any" && p.timeOfDay !== f.time) return false;
   if (f.indoor && !p.indoor) return false;
   if (f.q) {
-    const hay = [p.name, p.area, p.blurb, p.note, p.cuisine, CATEGORY_BY_ID[p.category].label, ...p.vibes, ...(p.branches ?? [])]
+    const hay = [p.name, p.area, p.blurb, p.cuisine, CATEGORY_BY_ID[p.category].label, ...p.vibes, ...(p.branches ?? [])]
       .join(" ")
       .toLowerCase();
     if (!f.q.toLowerCase().split(/\s+/).every((w) => hay.includes(w))) return false;
@@ -199,13 +205,6 @@ function RefineSheet({
             </>
           ) : (
             <>
-              <Field label="Looking for">
-                {(["all", "activity", "food"] as const).map((k) => (
-                  <Pill key={k} on={f.kind === k} onClick={() => set({ kind: k, category: "" })}>
-                    {k === "all" ? "Everything" : k === "activity" ? "Things to do" : "Food & drinks"}
-                  </Pill>
-                ))}
-              </Field>
               <Field label="Category">
                 {CATEGORIES.filter((c) => f.kind === "all" || c.kind === f.kind).map((c) => (
                   <Pill key={c.id} on={f.category === c.id} onClick={() => set({ category: f.category === c.id ? "" : c.id })}>
@@ -274,7 +273,7 @@ function RefineSheet({
           <button
             type="button"
             onClick={() =>
-              set(f.tab === "ideas" ? { occasion: "", budget: "" } : { ...PLACE_RESET, q: f.q, collection: f.collection })
+              set(f.tab === "ideas" ? { occasion: "", budget: "" } : { ...PLACE_RESET, q: f.q, collection: f.collection, kind: f.kind })
             }
             className="h-12 px-2 font-medium underline decoration-line underline-offset-4 hover:decoration-ink"
           >
@@ -349,7 +348,6 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
 
   const chips: { label: string; clear: Partial<ExploreState> }[] = [];
   if (f.collection) chips.push({ label: COLLECTION_BY_SLUG[f.collection]?.title ?? f.collection, clear: { collection: "" } });
-  if (f.kind !== "all") chips.push({ label: f.kind === "food" ? "Food & drinks" : "Things to do", clear: { kind: "all" } });
   if (f.category) chips.push({ label: CATEGORY_BY_ID[f.category as Place["category"]]?.label ?? f.category, clear: { category: "" } });
   if (f.vibe) chips.push({ label: VIBES.find((v) => v.id === f.vibe)?.label ?? f.vibe, clear: { vibe: "" } });
   if (f.area) chips.push({ label: f.area, clear: { area: "" } });
@@ -452,6 +450,21 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
               />
             </label>
             <RefineButton count={placeRefineCount} onClick={() => setRefine(true)} />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Show">
+            {KINDS.map(([k, label]) => (
+              <Pill
+                key={k}
+                on={f.kind === k}
+                onClick={() => {
+                  // Keep a chosen category only if it still belongs to the new type.
+                  const keep = !f.category || k === "all" || CATEGORY_BY_ID[f.category as Place["category"]]?.kind === k;
+                  set({ kind: k, category: keep ? f.category : "" });
+                }}
+              >
+                {label}
+              </Pill>
+            ))}
           </div>
 
           {browsing ? (
