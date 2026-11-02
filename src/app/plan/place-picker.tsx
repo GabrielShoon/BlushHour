@@ -3,8 +3,9 @@
 import { MagnifyingGlass, Plus, X } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/app-state";
-import { CategoryIcon } from "@/components/icons";
+import { Photo } from "@/components/photo";
 import { CATEGORY_BY_ID, PRICE_LABEL } from "@/data/categories";
+import { placePhoto } from "@/data/photos";
 import { PLACES } from "@/data/places";
 import { alternatives, distanceKm, formatSGD, nearby } from "@/lib/itinerary";
 import type { Place } from "@/lib/types";
@@ -67,13 +68,13 @@ export function PlacePicker({
         <button
           type="button"
           onClick={() => onPick(p.slug)}
-          className="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition hover:bg-surface-2"
+          className="flex w-full items-center gap-4 rounded-card p-2 text-left transition hover:bg-surface-2"
         >
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-rose-soft text-ink">
-            <CategoryIcon id={p.category} size={22} />
+          <span className="size-14 shrink-0 overflow-hidden rounded-card">
+            <Photo photo={placePhoto(p)} sizes="56px" decorative />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-semibold">{p.name}</span>
+            <span className="block truncate font-display text-xl leading-tight">{p.name}</span>
             <span className="block truncate text-sm text-ink-soft">
               {CATEGORY_BY_ID[p.category].label} · {p.area} · {PRICE_LABEL[p.priceLevel]} ~{formatSGD(p.costPerPerson)}
               {d != null && ` · ${d.toFixed(1)} km`}
@@ -92,11 +93,11 @@ export function PlacePicker({
       onClose={onClose}
       onClick={(e) => e.target === ref.current && ref.current?.close()}
       aria-labelledby="picker-title"
-      className="m-auto max-h-[85dvh] w-[min(42rem,calc(100vw-2rem))] overflow-hidden rounded-card border border-line bg-surface p-0 text-ink shadow-lift backdrop:bg-ink/40 backdrop:backdrop-blur-sm"
+      className="m-auto max-h-[85dvh] w-[min(42rem,calc(100vw-2rem))] overflow-hidden rounded-card border border-line bg-bg p-0 text-ink shadow-lift backdrop:bg-ink/40 backdrop:backdrop-blur-sm"
     >
       <div className="flex max-h-[85dvh] flex-col">
         <div className="flex items-center justify-between gap-3 border-b border-line p-4">
-          <h2 id="picker-title" className="truncate text-2xl font-semibold">
+          <h2 id="picker-title" className="truncate text-3xl">
             {title}
           </h2>
           <button
@@ -143,13 +144,13 @@ export function PlacePicker({
         <div className="overflow-y-auto overscroll-contain p-2">
           {!q && picks.items.length > 0 && (
             <>
-              <h3 className="px-2 pt-2 text-xs font-semibold uppercase tracking-wider text-rose">{picks.label}</h3>
+              <h3 className="eyebrow px-2 pt-3 !text-rose">{picks.label}</h3>
               <ul className="mt-1">
                 {picks.items.map((p) => (
                   <Row key={p.slug} p={p} />
                 ))}
               </ul>
-              <h3 className="px-2 pt-4 text-xs font-semibold uppercase tracking-wider text-ink-soft">Everything</h3>
+              <h3 className="eyebrow px-2 pt-5">Everything</h3>
             </>
           )}
           <ul className="mt-1">

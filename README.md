@@ -47,11 +47,13 @@ Import the GitHub repo in Vercel, add the two `NEXT_PUBLIC_SUPABASE_*` env vars,
 | --- | --- |
 | `src/data/places.ts` | The catalogue (89 places) from `knowledge/Activities.docx` and `knowledge/Food.docx`, plus a few BlushHour additions |
 | `src/data/suggested-dates.ts` | Curated date ideas that open in the builder |
+| `src/data/collections.ts` | Themed shelves (Golden hour, Rainy-day plans…) used on Explore and the home page |
+| `src/data/photos.ts` | Unsplash photo picks per category, landmark and date idea |
 | `src/lib/itinerary.ts` | Scheduling, travel-time estimates, costs, nearby/alternative lookups |
 | `src/components/app-state.tsx` | Client state: draft date, favourites, saved plans, auth, Supabase sync |
-| `src/app/discover` | Search, category chips, filters, grid and map views |
+| `src/app/explore` | One page with Date ideas and Places tabs: curated shelves, search, a Refine panel, grid and map views |
 | `src/app/places/[slug]` | Place details, map, nearby pairings |
-| `src/app/dates` | Date ideas by mood, occasion and budget, plus "Remix this date" |
+| `src/app/dates/[slug]` | A date idea's timeline and route, plus "Remix this date" |
 | `src/app/plan` | The builder: reorder, swap, durations, route map, cost summary, save |
 | `src/app/saved`, `src/app/login` | Account, favourites, saved plans |
 
@@ -61,4 +63,4 @@ Import the GitHub repo in Vercel, add the two `NEXT_PUBLIC_SUPABASE_*` env vars,
 - **Opening hours** aren't filled in yet; the UI asks people to check with the venue.
 - **Costs** are rough per-person estimates from the $–$$$$ levels (about $15 / $40 / $85 / $180).
 - Entries marked `unverified: true` had details guessed by BlushHour and need a check.
-- Cover images are generated art per category until real photos are added.
+- Photos are free Unsplash images chosen per category or landmark. Most show the mood, not the exact venue; swap in your own in `src/data/photos.ts`.

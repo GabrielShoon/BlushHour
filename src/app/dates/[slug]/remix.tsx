@@ -29,18 +29,18 @@ export function RemixButton({ slug }: { slug: string }) {
 
   if (asking) {
     return (
-      <div className="rise flex flex-col gap-3 rounded-card bg-surface p-4 shadow-card sm:flex-row sm:items-center">
-        <p className="font-semibold">
+      <div className="rise flex flex-col gap-3 sm:flex-row sm:items-center">
+        <p className="text-sm font-medium">
           Your builder already has {draft.stops.length} {draft.stops.length === 1 ? "stop" : "stops"}.
         </p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={append} className="h-11 rounded-full bg-rose px-4 font-semibold text-rose-ink">
+          <button type="button" onClick={append} className="h-11 rounded-full bg-rose px-5 font-semibold text-rose-ink hover:brightness-110">
             Add these stops to it
           </button>
-          <button type="button" onClick={replace} className="h-11 rounded-full border border-line px-4 font-semibold">
+          <button type="button" onClick={replace} className="h-11 rounded-full border border-ink px-5 font-semibold hover:bg-surface-2">
             Start over with this idea
           </button>
-          <button type="button" onClick={() => setAsking(false)} className="h-11 px-3 font-semibold text-ink-soft">
+          <button type="button" onClick={() => setAsking(false)} className="h-11 px-3 font-medium text-ink-soft hover:text-ink">
             Cancel
           </button>
         </div>
@@ -52,9 +52,9 @@ export function RemixButton({ slug }: { slug: string }) {
     <button
       type="button"
       onClick={() => (ready && draft.stops.length ? setAsking(true) : replace())}
-      className="inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 font-semibold text-bg shadow-card transition hover:bg-rose hover:text-rose-ink"
+      className="inline-flex h-12 items-center gap-2 rounded-full bg-rose px-7 font-semibold text-rose-ink transition hover:brightness-110"
     >
-      <Shuffle size={20} weight="bold" aria-hidden /> Remix this date
+      <Shuffle size={18} aria-hidden /> Remix this date
     </button>
   );
 }
@@ -64,5 +64,5 @@ export function RouteMap({ slug }: { slug: string }) {
     .map((s) => PLACE_BY_SLUG[s.slug])
     .filter((p) => p?.lat != null)
     .map((p, i) => ({ lat: p.lat!, lng: p.lng!, title: p.name, label: String(i + 1), href: `/places/${p.slug}` }));
-  return <MapView points={points} route className="h-96 w-full lg:h-full lg:min-h-[28rem]" />;
+  return <MapView points={points} route className="h-96 w-full lg:h-[32rem]" />;
 }

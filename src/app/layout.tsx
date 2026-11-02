@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Instrument_Sans, Instrument_Serif } from "next/font/google";
 import { AppStateProvider } from "@/components/app-state";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -7,15 +7,16 @@ import { Toaster } from "@/components/toaster";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const serif = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["SOFT", "opsz"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-serif",
   display: "swap",
 });
-const jakarta = Plus_Jakarta_Sans({
+const sans = Instrument_Sans({
   subsets: ["latin"],
-  variable: "--font-jakarta",
+  variable: "--font-sans-body",
   display: "swap",
 });
 
@@ -32,14 +33,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fff8f3" },
-    { media: "(prefers-color-scheme: dark)", color: "#170d14" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f0e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#14100f" },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-SG" className={`${fraunces.variable} ${jakarta.variable}`}>
+    <html lang="en-SG" className={`${serif.variable} ${sans.variable}`}>
       <body className="min-h-dvh flex flex-col">
         <AppStateProvider>
           <a

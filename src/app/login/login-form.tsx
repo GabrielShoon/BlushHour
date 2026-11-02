@@ -6,7 +6,7 @@ import { useState, type FormEvent } from "react";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase/client";
 
 const inputCls =
-  "h-12 w-full rounded-xl border border-line bg-bg px-4 text-base text-ink focus:border-rose aria-[invalid=true]:border-danger";
+  "h-12 w-full rounded-full border border-line bg-surface px-5 text-base text-ink focus:border-rose aria-[invalid=true]:border-danger";
 
 export function LoginForm({
   next,
@@ -29,7 +29,7 @@ export function LoginForm({
   if (!supabaseConfigured) {
     return (
       <div className="max-w-md rounded-card border border-line bg-surface p-8 shadow-lift">
-        <h1 className="text-3xl font-semibold">Accounts aren&apos;t switched on yet</h1>
+        <h1 className="text-3xl">Accounts aren&apos;t switched on yet</h1>
         <p className="mt-3 text-ink-soft">
           Add <code className="rounded bg-surface-2 px-1">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
           <code className="rounded bg-surface-2 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
@@ -86,7 +86,7 @@ export function LoginForm({
     return (
       <div className="rise max-w-md rounded-card border border-line bg-surface p-8 text-center shadow-lift" role="status">
         <Heart size={40} weight="fill" className="mx-auto text-rose" aria-hidden />
-        <h1 className="mt-3 text-3xl font-semibold">Check your inbox</h1>
+        <h1 className="mt-3 text-3xl">Check your inbox</h1>
         <p className="mt-2 text-ink-soft">
           We sent a confirmation link to <strong className="text-ink">{email}</strong>. Open it on this device to
           finish signing up.
@@ -99,10 +99,10 @@ export function LoginForm({
     <form
       onSubmit={submit}
       noValidate
-      className="rise w-full max-w-md rounded-card border border-line bg-surface p-6 shadow-lift sm:p-8"
+      className="rise w-full max-w-md"
       aria-describedby={error ? "form-error" : undefined}
     >
-      <h1 className="text-4xl font-semibold">{mode === "signin" ? "Welcome back" : "Create your account"}</h1>
+      <h1 className="text-5xl sm:text-6xl">{mode === "signin" ? "Welcome back" : "Create your account"}</h1>
       <p className="mt-2 text-ink-soft">
         {mode === "signin"
           ? "Sign in to see your saved dates on any device."
@@ -179,7 +179,7 @@ export function LoginForm({
             setMode(mode === "signin" ? "signup" : "signin");
             setError(null);
           }}
-          className="font-semibold text-rose underline-offset-2 hover:underline"
+          className="font-semibold text-rose underline underline-offset-4"
         >
           {mode === "signin" ? "Create an account" : "Sign in"}
         </button>

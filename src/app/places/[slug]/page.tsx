@@ -1,26 +1,16 @@
-import {
-  ArrowLeft,
-  ArrowSquareOut,
-  Clock,
-  CurrencyCircleDollar,
-  Info,
-  MapPin,
-  NotePencil,
-  Storefront,
-  Umbrella,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, ArrowUpRight, Info } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CategoryIcon } from "@/components/icons";
+import { Photo } from "@/components/photo";
 import { PlaceMap } from "@/components/place-map";
 import { AddToDateButton, FavoriteButton } from "@/components/place-actions";
-import { PlaceArt } from "@/components/place-art";
 import { PlaceCard } from "@/components/place-card";
 import { CATEGORY_BY_ID, PRICE_LABEL, VIBES } from "@/data/categories";
+import { placePhoto } from "@/data/photos";
 import { PLACE_BY_SLUG, PLACES } from "@/data/places";
 import { SUGGESTED_DATES } from "@/data/suggested-dates";
-import { distanceKm, formatDuration, formatSGD, nearby } from "@/lib/itinerary";
+import { formatDuration, formatSGD, nearby } from "@/lib/itinerary";
 
 export function generateStaticParams() {
   return PLACES.map((p) => ({ slug: p.slug }));
@@ -39,176 +29,134 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   const pairWith = nearby(place, 4, (p) => p.kind !== place.kind);
   const alsoNearby = nearby(place, 4, (p) => p.kind === place.kind);
   const inIdeas = SUGGESTED_DATES.filter((d) => d.stops.some((s) => s.slug === place.slug));
-  const mapsQuery = encodeURIComponent(`${place.name} ${place.area === "Various locations" ? "" : place.area} Singapore`);
+  const mapsQuery = encodeURIComponent(
+    `${place.name} ${place.area === "Various locations" ? "" : place.area} Singapore`,
+  );
 
-  const facts = [
-    {
-      icon: CurrencyCircleDollar,
-      label: "Price",
-      value:
-        place.priceLevel === 0
-          ? "Free"
-          : `${PRICE_LABEL[place.priceLevel]} · about ${formatSGD(place.costPerPerson)} per person`,
-    },
-    { icon: Clock, label: "Typical time", value: formatDuration(place.durationMins) },
-    { icon: MapPin, label: "Area", value: place.area },
-    {
-      icon: Umbrella,
-      label: "Setting",
-      value: place.indoor ? "Indoors, rain-proof" : "Outdoors, so check the weather",
-    },
+  const facts: [string, string][] = [
+    [
+      "Price",
+      place.priceLevel === 0
+        ? "Free"
+        : `${PRICE_LABEL[place.priceLevel]} · about ${formatSGD(place.costPerPerson)} per person`,
+    ],
+    ["Time to allow", formatDuration(place.durationMins)],
+    ["Where", place.branches ? `${place.area} · also ${place.branches.filter((b) => b !== place.area).join(", ")}` : place.area],
+    ["Setting", place.indoor ? "Indoors, so rain-proof" : "Outdoors, so check the weather"],
+    ["Opening hours", place.hours ?? "Not checked yet. Confirm with the venue before you go."],
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-      <Link
-        href="/discover"
-        className="inline-flex h-11 items-center gap-2 rounded-full pr-3 text-sm font-semibold text-ink-soft hover:text-rose"
-      >
-        <ArrowLeft size={18} aria-hidden /> Back to discover
-      </Link>
+    <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+      <nav aria-label="Breadcrumb" className="text-sm text-ink-soft">
+        <Link href="/explore?tab=places" className="inline-flex h-11 items-center gap-2 hover:text-ink">
+          <ArrowLeft size={16} aria-hidden /> Places
+        </Link>
+        <span aria-hidden> / </span>
+        <Link href={`/explore?tab=places&category=${place.category}`} className="hover:text-ink">
+          {cat.label}
+        </Link>
+      </nav>
 
-      <div className="mt-2 grid gap-8 lg:grid-cols-[1.2fr_1fr]">
-        {/* Visual */}
-        <div className="relative">
-          <PlaceArt place={place} className="aspect-[4/3] rounded-card shadow-card lg:aspect-[5/4]" iconSize={96} />
-          <p className="absolute bottom-3 left-3 rounded-full bg-surface/90 px-3 py-1 text-xs font-medium text-ink-soft backdrop-blur">
-            Photos coming soon
-          </p>
-        </div>
+      <div className="mt-4 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+        <figure>
+          <div className="photo-grade aspect-[4/5] overflow-hidden rounded-card sm:aspect-[5/4] lg:aspect-[4/5]">
+            <Photo photo={placePhoto(place)} priority sizes="(min-width: 1024px) 55vw, 100vw" />
+          </div>
+          <figcaption className="mt-2 text-xs text-ink-soft">Photo: Unsplash. Sets the mood; may not be this exact venue.</figcaption>
+        </figure>
 
-        {/* Summary */}
-        <div className="flex flex-col">
-          <p className="inline-flex items-center gap-2 text-sm font-semibold text-rose">
-            <CategoryIcon id={place.category} size={18} weight="bold" />
+        <div className="lg:pt-6">
+          <p className="eyebrow">
             {cat.label}
-            {place.cuisine && <span className="text-ink-soft">· {place.cuisine}</span>}
+            {place.cuisine && ` · ${place.cuisine}`} · {place.area}
           </p>
-          <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">{place.name}</h1>
+          <h1 className="mt-3 text-5xl sm:text-6xl">{place.name}</h1>
           {place.status === "closed" && (
-            <p className="mt-3 inline-flex w-fit items-center gap-2 rounded-full bg-ink px-3 py-1 text-sm font-semibold text-bg">
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-3 py-1 text-sm font-semibold text-bg">
               <Info size={16} aria-hidden /> Temporarily closed
             </p>
           )}
-          <p className="mt-4 text-lg text-ink-soft">{place.blurb}</p>
-          <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Vibes">
-            {place.vibes.map((v) => (
-              <li key={v}>
-                <Link
-                  href={`/discover?vibe=${v}`}
-                  className="inline-block rounded-full bg-surface-2 px-3 py-1 text-sm font-semibold text-ink-soft hover:text-rose"
-                >
+          <p className="mt-5 text-lg text-ink-soft">{place.blurb}</p>
+          <p className="mt-4 text-sm">
+            {place.vibes.map((v, i) => (
+              <span key={v}>
+                {i > 0 && <span className="text-ink-soft"> · </span>}
+                <Link href={`/explore?tab=places&vibe=${v}`} className="underline decoration-line underline-offset-4 hover:decoration-ink">
                   {VIBES.find((x) => x.id === v)?.label}
                 </Link>
-              </li>
+              </span>
             ))}
-          </ul>
-          <div className="mt-6 flex items-center gap-3">
-            <AddToDateButton place={place} size="lg" className="flex-1 sm:flex-none" />
+          </p>
+
+          <div className="mt-8 flex items-center gap-3">
+            <AddToDateButton place={place} variant="primary" className="flex-1 sm:flex-none" />
             <FavoriteButton place={place} className="size-12 border border-line" />
           </div>
 
           {place.note && (
-            <figure className="mt-6 rounded-card border border-line bg-surface p-4">
-              <figcaption className="flex items-center gap-2 text-sm font-semibold text-ink-soft">
-                <NotePencil size={18} aria-hidden /> Curator&apos;s note
-              </figcaption>
-              <blockquote className="mt-1 font-display text-lg italic">“{place.note}”</blockquote>
-            </figure>
+            <blockquote className="mt-10 border-l-2 border-rose pl-5">
+              <p className="font-display text-2xl italic leading-snug">“{place.note}”</p>
+              <footer className="eyebrow mt-3">Curator&apos;s note</footer>
+            </blockquote>
           )}
-        </div>
-      </div>
 
-      {/* Details */}
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_1.2fr]">
-        <section aria-labelledby="details" className="rounded-card border border-line bg-surface p-6 shadow-card">
-          <h2 id="details" className="text-2xl font-semibold">
-            Good to know
-          </h2>
-          <dl className="mt-4 divide-y divide-line">
-            {facts.map(({ icon: I, label, value }) => (
-              <div key={label} className="flex gap-3 py-3">
-                <I size={22} className="mt-0.5 shrink-0 text-rose" aria-hidden />
-                <div>
-                  <dt className="text-sm font-semibold text-ink-soft">{label}</dt>
-                  <dd className="font-medium">{value}</dd>
-                </div>
+          <dl className="mt-10 border-t border-ink">
+            {facts.map(([label, value]) => (
+              <div key={label} className="grid grid-cols-[8.5rem_1fr] gap-4 border-b border-line py-3.5 text-[15px]">
+                <dt className="text-ink-soft">{label}</dt>
+                <dd>{value}</dd>
               </div>
             ))}
-            <div className="flex gap-3 py-3">
-              <Clock size={22} className="mt-0.5 shrink-0 text-rose" aria-hidden />
-              <div>
-                <dt className="text-sm font-semibold text-ink-soft">Opening hours</dt>
-                <dd className="font-medium">
-                  {place.hours ?? "Not verified yet. Check the venue before you go."}
-                </dd>
-              </div>
-            </div>
-            {place.branches && (
-              <div className="flex gap-3 py-3">
-                <Storefront size={22} className="mt-0.5 shrink-0 text-rose" aria-hidden />
-                <div>
-                  <dt className="text-sm font-semibold text-ink-soft">Also at</dt>
-                  <dd className="font-medium">{place.branches.join(" · ")}</dd>
-                </div>
-              </div>
-            )}
           </dl>
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex h-11 items-center gap-2 rounded-full border border-line px-4 text-sm font-semibold hover:border-rose"
+            className="mt-5 inline-flex h-11 items-center gap-1.5 font-medium underline decoration-line underline-offset-4 hover:decoration-ink"
           >
-            Directions & hours on Google Maps <ArrowSquareOut size={16} aria-hidden />
+            Directions and hours on Google Maps <ArrowUpRight size={16} aria-hidden />
             <span className="sr-only">(opens in a new tab)</span>
           </a>
           {(place.unverified || place.source === "blushhour") && (
-            <p className="mt-4 flex gap-2 text-sm text-ink-soft">
+            <p className="mt-3 flex gap-2 text-sm text-ink-soft">
               <Info size={18} className="shrink-0" aria-hidden />
               {place.unverified
-                ? "Some details here are BlushHour's best guess and still need checking."
-                : "Added by BlushHour to round out the list."}
+                ? "Some details here are our best guess and still need checking."
+                : "A BlushHour addition to round out the list."}
             </p>
           )}
-        </section>
-
-        <section aria-labelledby="map" className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-          <h2 id="map" className="sr-only">
-            Map
-          </h2>
-          {place.lat != null ? (
-            <>
-              <PlaceMap place={place} nearby={[...pairWith, ...alsoNearby]} />
-              <p className="border-t border-line px-4 py-2 text-sm text-ink-soft">
-                The pin shows the area, not the exact address. Smaller pins are nearby spots.
-              </p>
-            </>
-          ) : (
-            <div className="grid h-full min-h-60 place-items-center p-6 text-center text-ink-soft">
-              <div>
-                <MapPin size={32} className="mx-auto" aria-hidden />
-                <p className="mt-2 font-semibold text-ink">Several locations</p>
-                <p>Pick the branch closest to the rest of your date.</p>
-              </div>
-            </div>
-          )}
-        </section>
+        </div>
       </div>
 
+      <section aria-labelledby="map" className="mt-20 border-t border-ink pt-6">
+        <h2 id="map" className="text-4xl">
+          On the map
+        </h2>
+        <div className="mt-6 overflow-hidden rounded-card border border-line">
+          {place.lat != null ? (
+            <PlaceMap place={place} nearby={[...pairWith, ...alsoNearby]} />
+          ) : (
+            <p className="p-10 text-center text-ink-soft">
+              Several branches. Pick the one closest to the rest of your date.
+            </p>
+          )}
+        </div>
+        {place.lat != null && (
+          <p className="mt-2 text-xs text-ink-soft">The pin marks the neighbourhood, not the exact address. Smaller pins are nearby spots.</p>
+        )}
+      </section>
+
       {pairWith.length > 0 && (
-        <section className="mt-14" aria-labelledby="pair">
-          <h2 id="pair" className="text-3xl font-semibold">
-            {place.kind === "activity" ? "Eat nearby" : "Things to do nearby"}
+        <section className="mt-20 border-t border-ink pt-6" aria-labelledby="pair">
+          <p className="eyebrow">Nearby</p>
+          <h2 id="pair" className="mt-2 text-4xl">
+            {place.kind === "activity" ? "Then, somewhere to eat" : "Before or after, something to do"}
           </h2>
-          <p className="mt-1 text-ink-soft">Good to combine into one date, sorted by distance.</p>
-          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
             {pairWith.map((p) => (
               <li key={p.slug}>
-                <PlaceCard place={p} />
-                <p className="mt-1 px-1 text-xs text-ink-soft tabular">
-                  ~{(distanceKm(place, p) ?? 0).toFixed(1)} km away
-                </p>
+                <PlaceCard place={p} sizes="(min-width: 1024px) 25vw, 50vw" />
               </li>
             ))}
           </ul>
@@ -216,18 +164,13 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
       )}
 
       {inIdeas.length > 0 && (
-        <section className="mt-14" aria-labelledby="ideas">
-          <h2 id="ideas" className="text-3xl font-semibold">
-            Featured in
-          </h2>
-          <ul className="mt-4 flex flex-wrap gap-2">
+        <section className="mt-20 border-t border-ink pt-6" aria-labelledby="ideas">
+          <p className="eyebrow">Featured in</p>
+          <ul className="mt-3 flex flex-wrap gap-x-8 gap-y-2">
             {inIdeas.map((d) => (
               <li key={d.slug}>
-                <Link
-                  href={`/dates/${d.slug}`}
-                  className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-4 font-semibold hover:border-rose"
-                >
-                  {d.title}
+                <Link id="ideas" href={`/dates/${d.slug}`} className="font-display text-3xl hover:text-rose">
+                  {d.title} →
                 </Link>
               </li>
             ))}

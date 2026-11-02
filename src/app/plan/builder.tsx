@@ -28,7 +28,6 @@ import {
   Path,
   Plus,
   PlusCircle,
-  Sparkle,
   Trash,
   Users,
 } from "@phosphor-icons/react/dist/ssr";
@@ -36,8 +35,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/app-state";
 import { CategoryIcon } from "@/components/icons";
+import { Photo } from "@/components/photo";
 import { MapView } from "@/components/map";
 import { CATEGORY_BY_ID, PRICE_LABEL } from "@/data/categories";
+import { placePhoto } from "@/data/photos";
 import { PLACE_BY_SLUG } from "@/data/places";
 import { SUGGESTED_DATES } from "@/data/suggested-dates";
 import {
@@ -74,8 +75,8 @@ function StopCard({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`relative rounded-card border bg-surface shadow-card ${
-        isDragging ? "z-10 border-rose shadow-lift" : "border-line"
+      className={`relative rounded-card border bg-surface transition-shadow ${
+        isDragging ? "z-10 border-ink shadow-lift" : "border-line"
       }`}
     >
       <div className="flex gap-3 p-4">
@@ -90,13 +91,22 @@ function StopCard({
           <DotsSixVertical size={22} weight="bold" aria-hidden />
         </button>
 
+        <Link
+          href={`/places/${s.place.slug}`}
+          tabIndex={-1}
+          aria-hidden
+          className="relative hidden size-24 shrink-0 overflow-hidden rounded-card sm:block"
+        >
+          <Photo photo={placePhoto(s.place)} sizes="96px" decorative />
+        </Link>
+
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-rose tabular">
+              <p className="text-sm font-medium text-rose tabular">
                 {formatTime(s.start)} – {formatTime(s.end)}
               </p>
-              <h3 className="truncate text-xl font-semibold">
+              <h3 className="truncate text-2xl">
                 <Link href={`/places/${s.place.slug}`} className="hover:text-rose">
                   {s.place.name}
                 </Link>
@@ -111,8 +121,8 @@ function StopCard({
                 </span>
               </p>
             </div>
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-rose-soft font-display font-semibold text-rose tabular">
-              {index + 1}
+            <span className="shrink-0 font-display text-3xl leading-none text-rose tabular" aria-hidden>
+              {String(index + 1).padStart(2, "0")}
             </span>
           </div>
 
@@ -182,9 +192,11 @@ function StopCard({
 
 function EmptyBuilder({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="rounded-card border-2 border-dashed border-line bg-surface/60 p-8 text-center sm:p-12">
-      <Sparkle size={40} className="mx-auto text-rose" aria-hidden />
-      <h2 className="mt-3 text-3xl font-semibold">A blank canvas</h2>
+    <div className="border-y border-line py-12 text-center sm:py-16">
+      <p className="eyebrow">Your date</p>
+      <h2 className="mt-3 text-5xl">
+        A blank page, <em className="text-rose">for now.</em>
+      </h2>
       <p className="mx-auto mt-2 max-w-md text-ink-soft">
         Add your first stop, then build around it. You can also start from a date idea and change whatever you like.
       </p>
@@ -192,24 +204,24 @@ function EmptyBuilder({ onAdd }: { onAdd: () => void }) {
         <button
           type="button"
           onClick={onAdd}
-          className="inline-flex h-12 items-center gap-2 rounded-full bg-rose px-6 font-semibold text-rose-ink"
+          className="inline-flex h-12 items-center gap-2 rounded-full bg-rose px-6 font-semibold text-rose-ink hover:brightness-110"
         >
           <Plus size={18} weight="bold" aria-hidden /> Add a stop
         </button>
         <Link
-          href="/discover"
-          className="inline-flex h-12 items-center rounded-full border border-line bg-surface px-6 font-semibold hover:border-rose"
+          href="/explore"
+          className="inline-flex h-12 items-center rounded-full border border-ink px-6 font-semibold hover:bg-surface-2"
         >
-          Browse Discover
+          Browse places
         </Link>
       </div>
-      <p className="mt-8 text-sm font-semibold text-ink-soft">Or start from an idea</p>
+      <p className="eyebrow mt-10">Or start from an idea</p>
       <ul className="mt-3 flex flex-wrap justify-center gap-2">
         {SUGGESTED_DATES.slice(0, 4).map((d) => (
           <li key={d.slug}>
             <Link
               href={`/dates/${d.slug}`}
-              className="inline-flex h-10 items-center rounded-full bg-surface-2 px-4 text-sm font-semibold hover:text-rose"
+              className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm font-medium hover:border-ink"
             >
               {d.title}
             </Link>
@@ -277,18 +289,19 @@ export function Builder() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <h1 className="sr-only">Date builder</h1>
       {/* Title + meta */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex-1">
-          <label htmlFor="title" className="text-sm font-semibold text-ink-soft">
-            Date builder
+          <label htmlFor="title" className="eyebrow">
+            Name your date
           </label>
           <input
             id="title"
             value={draft.title}
             onChange={(e) => updateDraft({ title: e.target.value })}
             maxLength={80}
-            className="block w-full rounded-xl border border-transparent bg-transparent font-display text-4xl font-semibold hover:border-line focus:border-rose sm:text-5xl"
+            className="block w-full rounded-xl border border-transparent bg-transparent font-display text-5xl hover:border-line focus:border-ink sm:text-6xl"
           />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:w-[30rem]">
@@ -373,7 +386,7 @@ export function Builder() {
 
         {/* Summary */}
         <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start" aria-label="Summary">
-          <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+          <div className="overflow-hidden rounded-card border border-line bg-surface">
             {mapPoints.length ? (
               <MapView points={mapPoints} route className="h-64 w-full lg:h-72" />
             ) : (
@@ -383,24 +396,24 @@ export function Builder() {
             )}
           </div>
 
-          <div className="rounded-card border border-line bg-surface p-5 shadow-card">
-            <h2 className="text-2xl font-semibold">Summary</h2>
+          <div className="rounded-card border border-line bg-surface p-6">
+            <h2 className="text-3xl">Summary</h2>
             <dl className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-surface-2 p-3">
-                <dt className="text-xs font-semibold uppercase tracking-wider text-ink-soft">Time</dt>
-                <dd className="whitespace-nowrap font-display text-lg font-semibold tabular">
+              <div className="border-t border-line pt-3">
+                <dt className="eyebrow">Time</dt>
+                <dd className="whitespace-nowrap font-display text-2xl tabular">
                   {hasStops ? `${formatTime(plan.stops[0].start)}–${formatTime(plan.end)}` : "–"}
                 </dd>
               </div>
-              <div className="rounded-2xl bg-surface-2 p-3">
-                <dt className="text-xs font-semibold uppercase tracking-wider text-ink-soft">Travel</dt>
-                <dd className="font-display text-xl font-semibold tabular">
+              <div className="border-t border-line pt-3">
+                <dt className="eyebrow">Travel</dt>
+                <dd className="font-display text-2xl tabular">
                   {hasStops ? formatDuration(plan.totalTravel || 0) : "–"}
                 </dd>
               </div>
             </dl>
 
-            <h3 className="mt-5 text-sm font-semibold uppercase tracking-wider text-ink-soft">
+            <h3 className="eyebrow mt-6">
               Estimated cost · {draft.people} {draft.people === 1 ? "person" : "people"}
             </h3>
             <ul className="mt-2 divide-y divide-line text-sm">
@@ -415,7 +428,7 @@ export function Builder() {
             </ul>
             <div className="mt-3 flex items-baseline justify-between border-t-2 border-ink pt-3">
               <span className="font-semibold">Total</span>
-              <span className="font-display text-3xl font-semibold tabular">{formatSGD(plan.totalCost)}</span>
+              <span className="font-display text-4xl tabular">{formatSGD(plan.totalCost)}</span>
             </div>
             {hasStops && draft.people > 1 && (
               <p className="text-right text-sm text-ink-soft tabular">

@@ -1,97 +1,108 @@
 "use client";
 
-import {
-  BookmarkSimple,
-  Compass,
-  Heart,
-  MapTrifold,
-  SignIn,
-  Sparkle,
-  UserCircle,
-} from "@phosphor-icons/react/dist/ssr";
+import { Compass, Heart, House, MapTrifold, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "./app-state";
 
-const NAV = [
-  { href: "/discover", label: "Discover", icon: Compass },
-  { href: "/dates", label: "Date ideas", icon: Sparkle },
-  { href: "/plan", label: "My date", icon: MapTrifold },
-  { href: "/saved", label: "Saved", icon: BookmarkSimple },
-];
-
 export function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2 font-display text-2xl font-semibold tracking-tight">
-      <span className="grid size-9 place-items-center rounded-full bg-rose text-rose-ink">
-        <Heart size={18} weight="fill" aria-hidden />
-      </span>
-      BlushHour
+    <Link href="/" className="font-display text-[1.75rem] leading-none tracking-tight" aria-label="BlushHour home">
+      Blush<em className="text-rose">Hour</em>
     </Link>
+  );
+}
+
+function Count({ n }: { n: number }) {
+  if (!n) return null;
+  return (
+    <span className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-rose px-1.5 text-[11px] font-semibold leading-5 text-rose-ink tabular">
+      {n}
+      <span className="sr-only"> {n === 1 ? "stop" : "stops"}</span>
+    </span>
   );
 }
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { draft, user, ready } = useApp();
+  const { draft, user, ready, favorites } = useApp();
   const count = ready ? draft.stops.length : 0;
-  const active = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const active = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  const exploreActive = active("/explore") || active("/places") || active("/dates");
+
+  const desktopLink = (on: boolean) =>
+    `relative py-2 text-[15px] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-px after:origin-left after:bg-ink after:transition-transform ${
+      on ? "text-ink after:scale-x-100" : "text-ink-soft hover:text-ink after:scale-x-0 hover:after:scale-x-100"
+    }`;
+
+  const mobile = [
+    { href: "/", label: "Home", icon: House, on: active("/") },
+    { href: "/explore", label: "Explore", icon: Compass, on: exploreActive },
+    { href: "/plan", label: "My date", icon: MapTrifold, on: active("/plan"), badge: count },
+    { href: "/saved", label: "Saved", icon: Heart, on: active("/saved") },
+  ];
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-line/70 bg-bg/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
           <Logo />
-          <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
-            {NAV.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active(href) ? "page" : undefined}
-                className={`relative rounded-full px-4 py-2 text-sm font-semibold transition hover:bg-surface-2 ${
-                  active(href) ? "bg-surface-2 text-ink" : "text-ink-soft"
-                }`}
-              >
-                {label}
-                {href === "/plan" && count > 0 && (
-                  <span className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-rose px-1.5 text-xs text-rose-ink tabular">
-                    {count}
-                    <span className="sr-only"> stops</span>
-                  </span>
-                )}
-              </Link>
-            ))}
+          <nav aria-label="Main" className="hidden items-center gap-8 md:flex">
+            <Link href="/explore" aria-current={exploreActive ? "page" : undefined} className={desktopLink(exploreActive)}>
+              Explore
+            </Link>
+            <Link href="/plan" aria-current={active("/plan") ? "page" : undefined} className={desktopLink(active("/plan"))}>
+              My date
+              <Count n={count} />
+            </Link>
           </nav>
-          <Link
-            href={user ? "/saved" : "/login"}
-            className="inline-flex h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-semibold transition hover:border-rose"
-          >
-            {user ? <UserCircle size={20} aria-hidden /> : <SignIn size={20} aria-hidden />}
-            <span>{user ? "Account" : "Sign in"}</span>
-          </Link>
+          <div className="flex items-center justify-end gap-1">
+            <Link
+              href="/saved"
+              aria-label={`Saved${ready && favorites.length ? `, ${favorites.length} favourites` : ""}`}
+              aria-current={active("/saved") ? "page" : undefined}
+              className={`hidden size-11 place-items-center rounded-full transition hover:bg-surface-2 md:grid ${
+                active("/saved") ? "text-rose" : "text-ink"
+              }`}
+            >
+              <Heart size={22} weight={active("/saved") ? "fill" : "regular"} aria-hidden />
+            </Link>
+            <Link
+              href={user ? "/saved" : "/login"}
+              className="inline-flex h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-ink-soft transition hover:text-ink"
+            >
+              {user ? (
+                <>
+                  <UserCircle size={22} aria-hidden /> <span className="hidden sm:inline">Account</span>
+                </>
+              ) : (
+                "Sign in"
+              )}
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Mobile bottom navigation */}
       <nav
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
         <ul className="grid grid-cols-4">
-          {NAV.map(({ href, label, icon: I }) => (
+          {mobile.map(({ href, label, icon: I, on, badge }) => (
             <li key={href}>
               <Link
                 href={href}
-                aria-current={active(href) ? "page" : undefined}
-                className={`relative flex h-16 flex-col items-center justify-center gap-0.5 text-xs font-semibold ${
-                  active(href) ? "text-rose" : "text-ink-soft"
+                aria-current={on ? "page" : undefined}
+                className={`relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
+                  on ? "text-rose" : "text-ink-soft"
                 }`}
               >
-                <I size={24} weight={active(href) ? "fill" : "regular"} aria-hidden />
+                <I size={22} weight={on ? "fill" : "regular"} aria-hidden />
                 {label}
-                {href === "/plan" && count > 0 && (
-                  <span className="absolute right-[calc(50%-22px)] top-2 grid min-w-5 place-items-center rounded-full bg-rose px-1 text-[11px] text-rose-ink tabular">
-                    {count}
+                {!!badge && (
+                  <span className="absolute right-[calc(50%-20px)] top-2 grid min-w-[18px] place-items-center rounded-full bg-rose px-1 text-[10px] leading-[18px] text-rose-ink tabular">
+                    {badge}
                     <span className="sr-only"> stops</span>
                   </span>
                 )}
