@@ -1,6 +1,5 @@
 import type { Place } from "@/lib/types";
 import { PHOTOS, CATEGORY_PHOTOS, type Photo } from "./photos";
-import { PLACES } from "./places";
 
 /** Hand-picked themes shown as shelves on Explore and as mood tiles on the home page. */
 export interface Collection {
@@ -77,6 +76,6 @@ export const COLLECTIONS: Collection[] = [
 
 export const COLLECTION_BY_SLUG = Object.fromEntries(COLLECTIONS.map((c) => [c.slug, c]));
 
-export function collectionPlaces(c: Collection) {
-  return PLACES.filter((p) => p.status !== "closed" && c.match(p));
+export function collectionPlaces(c: Collection, places: Place[]) {
+  return places.filter((p) => p.status !== "closed" && c.match(p));
 }

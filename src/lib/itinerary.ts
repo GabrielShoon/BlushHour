@@ -1,4 +1,4 @@
-import { PLACE_BY_SLUG, PLACES } from "@/data/places";
+import type { Catalogue } from "@/lib/catalogue";
 import type { Itinerary, ItineraryStop, Place, SuggestedDate } from "@/lib/types";
 
 export function uid() {
@@ -61,7 +61,7 @@ export interface ScheduledStop {
   travelBefore: number;
 }
 
-export function schedule(it: Itinerary): {
+export function schedule(it: Itinerary, cat: Catalogue): {
   stops: ScheduledStop[];
   end: number;
   totalCost: number;
@@ -73,7 +73,7 @@ export function schedule(it: Itinerary): {
   const out: ScheduledStop[] = [];
   let prev: Place | null = null;
   for (const stop of it.stops) {
-    const place = PLACE_BY_SLUG[stop.slug];
+    const place = cat.placeBySlug[stop.slug];
     if (!place) continue;
     const travelBefore = prev ? travelMins(prev, place) : 0;
     t += travelBefore;
@@ -86,8 +86,8 @@ export function schedule(it: Itinerary): {
   return { stops: out, end: t, totalCost, totalTravel };
 }
 
-export function nearby(place: Place, limit = 6, filter?: (p: Place) => boolean): Place[] {
-  return PLACES.filter((p) => p.slug !== place.slug && p.status !== "closed" && (!filter || filter(p)))
+export function nearby(place: Place, cat: Catalogue, limit = 6, filter?: (p: Place) => boolean): Place[] {
+  return cat.places.filter((p) => p.slug !== place.slug && p.status !== "closed" && (!filter || filter(p)))
     .map((p) => ({ p, d: distanceKm(place, p) }))
     .filter((x): x is { p: Place; d: number } => x.d != null)
     .sort((a, b) => a.d - b.d)
@@ -96,8 +96,8 @@ export function nearby(place: Place, limit = 6, filter?: (p: Place) => boolean):
 }
 
 /** Alternatives for the "replace" action: same category first, then same kind, closest first. */
-export function alternatives(place: Place, exclude: string[], limit = 6): Place[] {
-  const pool = PLACES.filter(
+export function alternatives(place: Place, cat: Catalogue, exclude: string[], limit = 6): Place[] {
+  const pool = cat.places.filter(
     (p) => !exclude.includes(p.slug) && p.status !== "closed" && p.kind === place.kind,
   );
   const score = (p: Place) =>
@@ -118,20 +118,20 @@ export function newItinerary(partial?: Partial<Itinerary>): Itinerary {
   };
 }
 
-export function stopFor(slug: string, durationMins?: number): ItineraryStop {
-  return { id: uid(), slug, durationMins: durationMins ?? PLACE_BY_SLUG[slug]?.durationMins ?? 60 };
+export function stopFor(cat: Catalogue, slug: string, durationMins?: number): ItineraryStop {
+  return { id: uid(), slug, durationMins: durationMins ?? cat.placeBySlug[slug]?.durationMins ?? 60 };
 }
 
-export function itineraryFromSuggestion(d: SuggestedDate): Itinerary {
+export function itineraryFromSuggestion(d: SuggestedDate, cat: Catalogue): Itinerary {
   return newItinerary({
     title: d.title,
     startTime: d.startTime,
-    stops: d.stops.map((s) => stopFor(s.slug, s.durationMins)),
+    stops: d.stops.map((s) => stopFor(cat, s.slug, s.durationMins)),
   });
 }
 
-export function suggestionCost(d: SuggestedDate) {
-  return d.stops.reduce((sum, s) => sum + (PLACE_BY_SLUG[s.slug]?.costPerPerson ?? 0), 0);
+export function suggestionCost(d: SuggestedDate, cat: Catalogue) {
+  return d.stops.reduce((sum, s) => sum + (cat.placeBySlug[s.slug]?.costPerPerson ?? 0), 0);
 }
 
 /** Budget band for a per-person cost, matching the BUDGETS filter ids. */

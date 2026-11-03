@@ -1,8 +1,10 @@
+"use client";
+
 import Link from "next/link";
-import { PLACE_BY_SLUG } from "@/data/places";
 import { ideaPhoto } from "@/data/photos";
 import { formatSGD, suggestionCost } from "@/lib/itinerary";
 import type { SuggestedDate } from "@/lib/types";
+import { useCatalogue } from "./catalogue";
 import { Photo } from "./photo";
 
 export function DateIdeaCard({
@@ -16,7 +18,8 @@ export function DateIdeaCard({
   size?: "md" | "lg";
   sizes?: string;
 }) {
-  const stops = date.stops.map((s) => PLACE_BY_SLUG[s.slug]).filter(Boolean);
+  const cat = useCatalogue();
+  const stops = date.stops.map((s) => cat.placeBySlug[s.slug]).filter(Boolean);
   return (
     <article className="group relative">
       <div
@@ -45,7 +48,7 @@ export function DateIdeaCard({
         {stops.map((p) => p.name).join(" → ")}
       </p>
       <p className="mt-1 text-sm font-medium tabular">
-        {stops.length} stops · about {formatSGD(suggestionCost(date))} per person
+        {stops.length} stops · about {formatSGD(suggestionCost(date, cat))} per person
       </p>
     </article>
   );

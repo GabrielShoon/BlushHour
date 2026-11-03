@@ -4,15 +4,17 @@ import { DateIdeaCard } from "@/components/date-idea-card";
 import { Photo } from "@/components/photo";
 import { COLLECTIONS, collectionPlaces } from "@/data/collections";
 import { PHOTOS } from "@/data/photos";
-import { PLACES } from "@/data/places";
-import { SUGGESTED_BY_SLUG } from "@/data/suggested-dates";
+import type { Catalogue } from "@/lib/catalogue";
+import { getCatalogue } from "@/lib/catalogue-server";
 import { formatSGD, formatTime, itineraryFromSuggestion, schedule } from "@/lib/itinerary";
 
 const EDIT = ["sentosa-sunset-splurge", "make-something-together", "under-fifty-city-lights"];
 const MOODS = ["golden-hour", "rainy-day", "make-something", "under-20"];
 
-function ItineraryTicket() {
-  const plan = schedule(itineraryFromSuggestion(SUGGESTED_BY_SLUG["clarke-quay-game-night"]));
+function ItineraryTicket({ cat }: { cat: Catalogue }) {
+  const idea = cat.ideaBySlug["clarke-quay-game-night"] ?? cat.ideas[0];
+  if (!idea) return null;
+  const plan = schedule(itineraryFromSuggestion(idea, cat), cat);
   return (
     <div className="w-64 rounded-card border border-line bg-surface/95 p-5 shadow-lift backdrop-blur" aria-hidden>
       <p className="eyebrow">Tonight · Clarke Quay</p>
@@ -32,7 +34,13 @@ function ItineraryTicket() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const cat = await getCatalogue();
+  // Featured ideas, topped up from the rest if any were removed.
+  const edit = [
+    ...EDIT.map((s) => cat.ideaBySlug[s]).filter(Boolean),
+    ...cat.ideas.filter((d) => !EDIT.includes(d.slug)),
+  ].slice(0, 3);
   return (
     <>
       {/* Hero */}
@@ -43,7 +51,7 @@ export default function Home() {
             The art of an evening, <em className="text-rose">well spent.</em>
           </h1>
           <p className="mt-6 max-w-md text-lg text-ink-soft">
-            Find {PLACES.length} places worth going to, from rooftop dinners to tiny photobooths. Then put them
+            Find {cat.places.length} places worth going to, from rooftop dinners to tiny photobooths. Then put them
             together into a date that&apos;s yours.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
@@ -67,7 +75,7 @@ export default function Home() {
             <Photo photo={PHOTOS.candlelit} sizes="20vw" />
           </div>
           <div className="absolute left-0 top-8 hidden sm:block lg:-left-6">
-            <ItineraryTicket />
+            <ItineraryTicket cat={cat} />
           </div>
         </div>
       </section>
@@ -86,9 +94,9 @@ export default function Home() {
           </Link>
         </div>
         <ul className="mt-10 grid gap-x-8 gap-y-12 md:grid-cols-3">
-          {EDIT.map((slug, i) => (
-            <li key={slug}>
-              <DateIdeaCard date={SUGGESTED_BY_SLUG[slug]} index={i} size="lg" sizes="(min-width: 768px) 33vw, 100vw" />
+          {edit.map((d, i) => (
+            <li key={d.slug}>
+              <DateIdeaCard date={d} index={i} size="lg" sizes="(min-width: 768px) 33vw, 100vw" />
             </li>
           ))}
         </ul>
@@ -116,7 +124,7 @@ export default function Home() {
                   <span className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5">
                     <span className="block font-display text-2xl leading-tight sm:text-3xl">{c.title}</span>
                     <span className="mt-1 block text-xs font-semibold uppercase tracking-[0.14em] text-white/80">
-                      {collectionPlaces(c).length} places
+                      {collectionPlaces(c, cat.places).length} places
                     </span>
                   </span>
                 </Link>

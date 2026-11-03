@@ -213,3 +213,55 @@ label[for] {
   width: 22px;
   height: 22px;
 }
+
+/* Budget slider: wine-filled track up to the thumb. */
+.bh-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2.75rem;
+  background: transparent;
+  cursor: pointer;
+}
+.bh-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--rose) var(--pct, 0%), var(--line) var(--pct, 0%));
+}
+.bh-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+}
+.bh-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--rose);
+}
+.bh-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 2px solid var(--rose);
+  box-shadow: var(--shadow);
+}
+.bh-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 2px solid var(--rose);
+}
+.bh-range:focus-visible {
+  outline: none;
+}
+.bh-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--rose);
+  outline-offset: 3px;
+}
+.bh-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--rose);
+  outline-offset: 3px;
+}

@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
-  ArrowRight,
   GridFour,
   MagnifyingGlass,
   MapTrifold,
@@ -13,11 +11,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DateIdeaCard } from "@/components/date-idea-card";
 import { MapView } from "@/components/map";
 import { PlaceCard } from "@/components/place-card";
-import { BUDGETS, CATEGORIES, CATEGORY_BY_ID, OCCASIONS, PRICE_LABEL, VIBES } from "@/data/categories";
-import { COLLECTION_BY_SLUG, COLLECTIONS, collectionPlaces, type Collection } from "@/data/collections";
-import { AREA_NAMES, PLACES } from "@/data/places";
-import { SUGGESTED_DATES } from "@/data/suggested-dates";
-import { budgetBand, suggestionCost } from "@/lib/itinerary";
+import { CATEGORIES, CATEGORY_BY_ID, OCCASIONS, VIBES } from "@/data/categories";
+import { COLLECTION_BY_SLUG } from "@/data/collections";
+import { useCatalogue } from "@/components/catalogue";
+import { suggestionCost } from "@/lib/itinerary";
 import type { Place } from "@/lib/types";
 
 export interface ExploreState {
@@ -28,13 +25,15 @@ export interface ExploreState {
   collection: string;
   vibe: string;
   area: string;
-  maxPrice: number;
+  /** Max S$ per person for places; null = any. */
+  maxCost: number | null;
   time: string;
   indoor: boolean;
   sort: "recommended" | "price-asc" | "price-desc" | "name";
   mood: string;
   occasion: string;
-  budget: string;
+  /** Max S$ per person for a whole date idea; null = any. */
+  ideaMax: number | null;
 }
 
 const KINDS = [
@@ -50,7 +49,7 @@ const PLACE_RESET: Partial<ExploreState> = {
   collection: "",
   vibe: "",
   area: "",
-  maxPrice: 4,
+  maxCost: null,
   time: "",
   indoor: false,
   sort: "recommended",
@@ -62,7 +61,7 @@ function matches(p: Place, f: ExploreState) {
   if (f.category && p.category !== f.category) return false;
   if (f.vibe && !p.vibes.includes(f.vibe as Place["vibes"][number])) return false;
   if (f.area && p.area !== f.area) return false;
-  if (p.priceLevel > f.maxPrice) return false;
+  if (f.maxCost != null && p.costPerPerson > f.maxCost) return false;
   if (f.time && p.timeOfDay !== "any" && p.timeOfDay !== f.time) return false;
   if (f.indoor && !p.indoor) return false;
   if (f.q) {
@@ -91,64 +90,66 @@ function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   );
 }
 
-function Shelf({ c, onSeeAll }: { c: Collection; onSeeAll: () => void }) {
-  const ref = useRef<HTMLUListElement>(null);
-  const items = collectionPlaces(c);
-  const scroll = (dir: 1 | -1) =>
-    ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: "smooth" });
-
-  return (
-    <section aria-labelledby={`shelf-${c.slug}`} className="border-t border-line pt-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h2 id={`shelf-${c.slug}`} className="text-3xl sm:text-4xl">
-            {c.title}
-          </h2>
-          <p className="mt-1 text-ink-soft">{c.blurb}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={onSeeAll}
-            className="mr-2 h-10 px-1 text-sm font-medium underline decoration-line underline-offset-4 hover:decoration-ink"
-          >
-            See all {items.length}
-          </button>
-          <button
-            type="button"
-            onClick={() => scroll(-1)}
-            aria-label={`Scroll ${c.title} back`}
-            className="hidden size-10 place-items-center rounded-full border border-line hover:border-ink md:grid"
-          >
-            <ArrowLeft size={16} aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => scroll(1)}
-            aria-label={`Scroll ${c.title} forward`}
-            className="hidden size-10 place-items-center rounded-full border border-line hover:border-ink md:grid"
-          >
-            <ArrowRight size={16} aria-hidden />
-          </button>
-        </div>
-      </div>
-      <ul ref={ref} className="shelf -mx-4 mt-6 flex scroll-px-4 gap-5 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
-        {items.map((p) => (
-          <li key={p.slug} className="w-[70vw] shrink-0 sm:w-64 lg:w-[17.5rem]">
-            <PlaceCard place={p} sizes="(min-width: 1024px) 280px, (min-width: 640px) 256px, 70vw" />
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <fieldset className="border-t border-line py-5">
       <legend className="eyebrow mb-3 float-left w-full">{label}</legend>
       <div className="clear-both flex flex-wrap gap-2">{children}</div>
     </fieldset>
+  );
+}
+
+/** Slider positions in S$ per person; null is "any budget". */
+const PLACE_STOPS: (number | null)[] = [0, 10, 20, 30, 40, 50, 75, 100, 150, 200, null];
+const IDEA_STOPS: (number | null)[] = [20, 30, 50, 75, 100, 150, 200, 300, null];
+
+function budgetLabel(v: number | null) {
+  if (v == null) return "Any budget";
+  return v === 0 ? "Free only" : `Up to S$${v}`;
+}
+
+function BudgetSlider({
+  label,
+  stops,
+  value,
+  onChange,
+}: {
+  label: string;
+  stops: (number | null)[];
+  value: number | null;
+  onChange: (v: number | null) => void;
+}) {
+  // Snap any value from the URL to the nearest stop at or above it.
+  const idx = value == null ? stops.length - 1 : Math.max(0, stops.findIndex((s) => s == null || s >= value));
+  const pct = (idx / (stops.length - 1)) * 100;
+  const text = budgetLabel(stops[idx]);
+  return (
+    <div className="border-t border-line py-5">
+      <div className="flex items-baseline justify-between gap-4">
+        <label htmlFor="budget-slider" className="eyebrow">
+          {label}
+        </label>
+        <output htmlFor="budget-slider" className="font-display text-2xl tabular">
+          {text}
+        </output>
+      </div>
+      <input
+        id="budget-slider"
+        type="range"
+        min={0}
+        max={stops.length - 1}
+        step={1}
+        value={idx}
+        onChange={(e) => onChange(stops[Number(e.target.value)])}
+        aria-valuetext={text}
+        className="bh-range mt-4 w-full"
+        style={{ ["--pct" as string]: `${pct}%` }}
+      />
+      <div className="mt-1 flex justify-between text-xs text-ink-soft tabular">
+        <span>{stops[0] === 0 ? "Free" : `S$${stops[0]}`}</span>
+        <span>Any</span>
+      </div>
+    </div>
   );
 }
 
@@ -163,6 +164,7 @@ function RefineSheet({
   count: number;
   onClose: () => void;
 }) {
+  const { areas } = useCatalogue();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => ref.current?.showModal(), []);
   const close = () => ref.current?.close();
@@ -195,13 +197,12 @@ function RefineSheet({
                   </Pill>
                 ))}
               </Field>
-              <Field label="Budget per person">
-                {BUDGETS.map((b) => (
-                  <Pill key={b.id} on={f.budget === b.id} onClick={() => set({ budget: f.budget === b.id ? "" : b.id })}>
-                    {b.label}
-                  </Pill>
-                ))}
-              </Field>
+              <BudgetSlider
+                label="Budget per person, whole date"
+                stops={IDEA_STOPS}
+                value={f.ideaMax}
+                onChange={(v) => set({ ideaMax: v })}
+              />
             </>
           ) : (
             <>
@@ -233,19 +234,18 @@ function RefineSheet({
                   Rain-proof
                 </Pill>
               </Field>
-              <Field label="Budget">
-                {[0, 1, 2, 3, 4].map((n) => (
-                  <Pill key={n} on={f.maxPrice === n} onClick={() => set({ maxPrice: n })}>
-                    {n === 4 ? "Any" : n === 0 ? "Free" : `Up to ${PRICE_LABEL[n]}`}
-                  </Pill>
-                ))}
-              </Field>
+              <BudgetSlider
+                label="Budget per person"
+                stops={PLACE_STOPS}
+                value={f.maxCost}
+                onChange={(v) => set({ maxCost: v })}
+              />
               <div className="grid grid-cols-2 gap-4 border-t border-line py-5">
                 <label className="flex flex-col gap-2">
                   <span className="eyebrow">Area</span>
                   <select className={selectCls} value={f.area} onChange={(e) => set({ area: e.target.value })}>
                     <option value="">Anywhere</option>
-                    {AREA_NAMES.map((a) => (
+                    {areas.map((a) => (
                       <option key={a} value={a}>
                         {a}
                       </option>
@@ -273,7 +273,7 @@ function RefineSheet({
           <button
             type="button"
             onClick={() =>
-              set(f.tab === "ideas" ? { occasion: "", budget: "" } : { ...PLACE_RESET, q: f.q, collection: f.collection, kind: f.kind })
+              set(f.tab === "ideas" ? { occasion: "", ideaMax: null } : { ...PLACE_RESET, q: f.q, collection: f.collection, kind: f.kind })
             }
             className="h-12 px-2 font-medium underline decoration-line underline-offset-4 hover:decoration-ink"
           >
@@ -295,6 +295,7 @@ function RefineSheet({
 /* ------------------------------------------------------------------ */
 
 export function ExploreClient({ initial }: { initial: ExploreState }) {
+  const cat = useCatalogue();
   const [f, setF] = useState<ExploreState>(initial);
   const [refine, setRefine] = useState(false);
   const [view, setView] = useState<"grid" | "map">("grid");
@@ -311,14 +312,14 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
       if (f.category) p.set("category", f.category);
       if (f.vibe) p.set("vibe", f.vibe);
       if (f.area) p.set("area", f.area);
-      if (f.maxPrice < 4) p.set("price", String(f.maxPrice));
+      if (f.maxCost != null) p.set("max", String(f.maxCost));
       if (f.time) p.set("time", f.time);
       if (f.indoor) p.set("indoor", "1");
       if (f.sort !== "recommended") p.set("sort", f.sort);
     } else {
       if (f.mood) p.set("mood", f.mood);
       if (f.occasion) p.set("occasion", f.occasion);
-      if (f.budget) p.set("budget", f.budget);
+      if (f.ideaMax != null) p.set("max", String(f.ideaMax));
     }
     const qs = p.toString();
     const t = setTimeout(() => window.history.replaceState(null, "", qs ? `?${qs}` : location.pathname), 250);
@@ -326,25 +327,26 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
   }, [f]);
 
   /* Ideas */
-  const ideas = SUGGESTED_DATES.filter(
+  const ideas = cat.ideas.filter(
     (d) =>
       (!f.mood || d.moods.includes(f.mood as never)) &&
       (!f.occasion || d.occasions.includes(f.occasion as never)) &&
-      (!f.budget || budgetBand(suggestionCost(d)) === f.budget),
+      (f.ideaMax == null || suggestionCost(d, cat) <= f.ideaMax),
   );
-  const ideaRefineCount = [f.occasion, f.budget].filter(Boolean).length;
+  const ideaRefineCount = (f.occasion ? 1 : 0) + (f.ideaMax != null ? 1 : 0);
 
   /* Places */
+  // True when nothing beyond the type switch is narrowing the list.
   const browsing =
-    !f.q && !f.collection && !f.category && !f.vibe && !f.area && !f.time && !f.indoor && f.kind === "all" && f.maxPrice === 4;
+    !f.q && !f.collection && !f.category && !f.vibe && !f.area && !f.time && !f.indoor && f.maxCost == null;
   const results = useMemo(() => {
-    const list = PLACES.filter((p) => matches(p, f));
+    const list = cat.places.filter((p) => matches(p, f));
     const closed = (p: Place) => (p.status === "closed" ? 1 : 0);
     if (f.sort === "price-asc") return list.sort((a, b) => closed(a) - closed(b) || a.costPerPerson - b.costPerPerson);
     if (f.sort === "price-desc") return list.sort((a, b) => closed(a) - closed(b) || b.costPerPerson - a.costPerPerson);
     if (f.sort === "name") return list.sort((a, b) => a.name.localeCompare(b.name));
     return list.sort((a, b) => closed(a) - closed(b));
-  }, [f]);
+  }, [f, cat]);
 
   const chips: { label: string; clear: Partial<ExploreState> }[] = [];
   if (f.collection) chips.push({ label: COLLECTION_BY_SLUG[f.collection]?.title ?? f.collection, clear: { collection: "" } });
@@ -353,7 +355,7 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
   if (f.area) chips.push({ label: f.area, clear: { area: "" } });
   if (f.time) chips.push({ label: { day: "Daytime", evening: "Evening", night: "Late night" }[f.time] ?? f.time, clear: { time: "" } });
   if (f.indoor) chips.push({ label: "Rain-proof", clear: { indoor: false } });
-  if (f.maxPrice < 4) chips.push({ label: f.maxPrice === 0 ? "Free" : `Up to ${PRICE_LABEL[f.maxPrice]}`, clear: { maxPrice: 4 } });
+  if (f.maxCost != null) chips.push({ label: budgetLabel(f.maxCost), clear: { maxCost: null } });
   const placeRefineCount = chips.filter((c) => !("collection" in c.clear)).length;
 
   const mapPoints = results
@@ -382,8 +384,8 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
         <div role="tablist" aria-label="Explore" className="flex gap-8 border-b border-line">
           {(
             [
-              ["ideas", "Date ideas", SUGGESTED_DATES.length],
-              ["places", "Places", PLACES.length],
+              ["ideas", "Date ideas", cat.ideas.length],
+              ["places", "Places", cat.places.length],
             ] as const
           ).map(([id, label, n]) => (
             <button
@@ -410,7 +412,7 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
               <Pill on={!f.mood} onClick={() => set({ mood: "" })}>
                 All moods
               </Pill>
-              {VIBES.filter((v) => SUGGESTED_DATES.some((d) => d.moods.includes(v.id))).map((v) => (
+              {VIBES.filter((v) => cat.ideas.some((d) => d.moods.includes(v.id))).map((v) => (
                 <Pill key={v.id} on={f.mood === v.id} onClick={() => set({ mood: f.mood === v.id ? "" : v.id })}>
                   {v.label}
                 </Pill>
@@ -422,7 +424,7 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
             <ul className="mt-10 grid gap-x-8 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
               {ideas.map((d) => (
                 <li key={d.slug} className="rise">
-                  <DateIdeaCard date={d} index={SUGGESTED_DATES.indexOf(d)} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" />
+                  <DateIdeaCard date={d} index={cat.ideas.indexOf(d)} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" />
                 </li>
               ))}
             </ul>
@@ -430,7 +432,7 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
             <Empty
               title="No ready-made idea for that yet."
               body="That's what the builder is for. Pick the pieces yourself from Places."
-              action={["Browse places", () => set({ tab: "places", mood: "", occasion: "", budget: "" })]}
+              action={["Browse places", () => set({ tab: "places", mood: "", occasion: "", ideaMax: null })]}
             />
           )}
         </div>
@@ -467,33 +469,7 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
             ))}
           </div>
 
-          {browsing ? (
-            <div className="mt-12 flex flex-col gap-14">
-              {COLLECTIONS.map((c) => (
-                <Shelf key={c.slug} c={c} onSeeAll={() => { set({ collection: c.slug }); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
-              ))}
-              <section aria-labelledby="by-category" className="border-t border-line pt-6">
-                <h2 id="by-category" className="text-3xl sm:text-4xl">
-                  Or browse by category
-                </h2>
-                <ul className="mt-6 grid grid-cols-2 gap-x-8 sm:grid-cols-3 lg:grid-cols-4">
-                  {CATEGORIES.map((c) => (
-                    <li key={c.id} className="border-b border-line">
-                      <button
-                        type="button"
-                        onClick={() => { set({ category: c.id }); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                        className="flex w-full items-baseline justify-between py-3 text-left hover:text-rose"
-                      >
-                        <span className="font-display text-xl">{c.label}</span>
-                        <span className="text-sm text-ink-soft tabular">{PLACES.filter((p) => p.category === c.id).length}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </div>
-          ) : (
-            <>
+          <>
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="mr-2 text-sm text-ink-soft tabular" aria-live="polite">
@@ -511,13 +487,15 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
                       {c.label} <X size={14} aria-hidden />
                     </button>
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => set(PLACE_RESET)}
-                    className="h-9 px-2 text-sm font-medium underline decoration-line underline-offset-4 hover:decoration-ink"
-                  >
-                    Back to all
-                  </button>
+                  {!browsing && (
+                    <button
+                      type="button"
+                      onClick={() => set({ ...PLACE_RESET, kind: f.kind })}
+                      className="h-9 px-2 text-sm font-medium underline decoration-line underline-offset-4 hover:decoration-ink"
+                    >
+                      Clear filters
+                    </button>
+                  )}
                 </div>
                 <div className="flex rounded-full border border-line p-1" role="group" aria-label="View">
                   {(
@@ -564,8 +542,7 @@ export function ExploreClient({ initial }: { initial: ExploreState }) {
                   ))}
                 </ul>
               )}
-            </>
-          )}
+          </>
         </div>
       )}
 

@@ -8,28 +8,28 @@ import { AddToDateButton, FavoriteButton } from "@/components/place-actions";
 import { PlaceCard } from "@/components/place-card";
 import { CATEGORY_BY_ID, VIBES } from "@/data/categories";
 import { placePhoto } from "@/data/photos";
-import { PLACE_BY_SLUG, PLACES } from "@/data/places";
-import { SUGGESTED_DATES } from "@/data/suggested-dates";
+import { getCatalogue } from "@/lib/catalogue-server";
 import { costLabel, formatDuration, nearby } from "@/lib/itinerary";
 
-export function generateStaticParams() {
-  return PLACES.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  return (await getCatalogue()).places.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const p = PLACE_BY_SLUG[(await params).slug];
+  const p = (await getCatalogue()).placeBySlug[(await params).slug];
   if (!p) return {};
   return { title: `${p.name}, ${p.area}`, description: p.blurb };
 }
 
 export default async function PlacePage({ params }: { params: Promise<{ slug: string }> }) {
-  const place = PLACE_BY_SLUG[(await params).slug];
+  const catalogue = await getCatalogue();
+  const place = catalogue.placeBySlug[(await params).slug];
   if (!place) notFound();
   const cat = CATEGORY_BY_ID[place.category];
   const photo = placePhoto(place);
-  const pairWith = nearby(place, 4, (p) => p.kind !== place.kind);
-  const alsoNearby = nearby(place, 4, (p) => p.kind === place.kind);
-  const inIdeas = SUGGESTED_DATES.filter((d) => d.stops.some((s) => s.slug === place.slug));
+  const pairWith = nearby(place, catalogue, 4, (p) => p.kind !== place.kind);
+  const alsoNearby = nearby(place, catalogue, 4, (p) => p.kind === place.kind);
+  const inIdeas = catalogue.ideas.filter((d) => d.stops.some((s) => s.slug === place.slug));
   const mapsQuery = encodeURIComponent(
     `${place.name} ${place.area === "Various locations" ? "" : place.area} Singapore`,
   );
@@ -42,7 +42,6 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
     ["Time to allow", formatDuration(place.durationMins)],
     ["Where", place.branches ? `${place.area} · also ${place.branches.filter((b) => b !== place.area).join(", ")}` : place.area],
     ["Setting", place.indoor ? "Indoors, so rain-proof" : "Outdoors, so check the weather"],
-    ["Opening hours", place.hours ?? "Not checked yet. Confirm with the venue before you go."],
   ];
 
   return (
@@ -62,9 +61,6 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           <div className="photo-grade aspect-[4/5] overflow-hidden rounded-card sm:aspect-[5/4] lg:aspect-[4/5]">
             <Photo photo={photo} priority sizes="(min-width: 1024px) 55vw, 100vw" />
           </div>
-          {photo.kind === "unsplash" && (
-            <figcaption className="mt-2 text-xs text-ink-soft">Photo: Unsplash. Sets the mood; may not be this exact venue.</figcaption>
-          )}
         </figure>
 
         <div className="lg:pt-6">

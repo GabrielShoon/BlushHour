@@ -739,7 +739,7 @@ export const PLACES: Place[] = [
     cost: 60,
     mins: 105,
     cuisine: "Fusion",
-    blurb: "A grill on Sentosa that's perfect after a beach afternoon.",
+    blurb: "An idyllic retreat nestled in the vibrant heart of Sentosa Island's Imbiah Hill.",
     vibes: ["romantic", "chill"],
     time: "evening",
   }),

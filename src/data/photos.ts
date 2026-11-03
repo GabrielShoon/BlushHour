@@ -1,13 +1,11 @@
-import type { CategoryId, Place, SuggestedDate } from "@/lib/types";
+import type { CategoryId, Photo, Place, SuggestedDate } from "@/lib/types";
 
 /**
- * Two kinds of photo: the curator's own shots of a venue (in /public/photos)
- * and free Unsplash photos (unsplash.com/license) that set the mood where we
- * don't have one yet.
+ * Two kinds of photo: the curator's own shots of a venue (in /public/photos or
+ * uploaded through the admin) and free Unsplash photos (unsplash.com/license)
+ * that set the mood where a place has none yet.
  */
-export type Photo =
-  | { kind: "unsplash"; id: string; alt: string }
-  | { kind: "local"; src: string; width: number; height: number; alt: string };
+export type { Photo };
 
 const p = (id: string, alt: string): Photo => ({ kind: "unsplash", id, alt });
 const local = (src: string, width: number, height: number) => ({ src, width, height });
@@ -29,7 +27,6 @@ export const PHOTOS = {
   satay: p("1742808838159-1848c1a36209", "Satay skewers over a charcoal grill"),
   uss: p("1696851108364-5341c14c49cf", "The Universal Studios globe"),
   safari: p("1746272292394-13c6566cbf71", "A leopard in the dark"),
-  mbs: p("1627882278881-672b48f83298", "Marina Bay Sands lit up at night"),
 } as const;
 
 export const CATEGORY_PHOTOS: Record<CategoryId, Photo> = {
@@ -52,7 +49,6 @@ export const CATEGORY_PHOTOS: Record<CategoryId, Photo> = {
 
 /** Place-specific photos where we have a good match; everything else uses its category. */
 const PLACE_PHOTOS: Record<string, Photo> = {
-  "royal-albatross": PHOTOS.ship,
   "singapore-oceanarium": PHOTOS.aquarium,
   "cable-car": PHOTOS.cablecar,
   "singapore-flyer": PHOTOS.flyer,
@@ -62,7 +58,6 @@ const PLACE_PHOTOS: Record<string, Photo> = {
   uss: PHOTOS.uss,
   "night-safari": PHOTOS.safari,
   "henderson-waves": PHOTOS.henderson,
-  "spectra-light-show": PHOTOS.mbs,
   "haji-lane": PHOTOS.haji,
   "jewel-rain-vortex": PHOTOS.jewel,
   "lau-pa-sat-satay-street": PHOTOS.satay,
@@ -74,13 +69,14 @@ const OWN_PHOTOS: Record<string, { src: string; width: number; height: number }>
   "absurdities-singapore": local("/photos/restaurant-absurdities.jpg", 1400, 1050),
   "aramsa-garden-spa": local("/photos/aramsa.jpg", 686, 447),
   "artscience-museum": local("/photos/artscience-museum.jpg", 335, 597),
-  "axe-factor": local("/photos/axe-factor.jpg", 1000, 667),
+  "axe-factor": local("/photos/axe-factor2.webp", 763, 509),
   "beyond-crust": local("/photos/beyond-crust.jpg", 554, 554),
   "bkk-bistro-and-bar": local("/photos/bkk-bistro.jpg", 1080, 1080),
   "block-bouquets": local("/photos/block-bouquets.jpg", 480, 639),
   "dollop-pitstop": local("/photos/dollop.webp", 680, 453),
   "dopamine-land": local("/photos/dopamine-land.jpg", 447, 447),
   "elixir-esports": local("/photos/elixir-esports.jpg", 2048, 1366),
+  "furama-in-room-hotpot": local("/photos/furama-hotpot.jpg", 516, 387),
   "fyp-cafe": local("/photos/fyp-cafe.webp", 2400, 1600),
   "game-over-gaming-cafe": local("/photos/game-over-gaming-cafe.jpg", 1920, 1080),
   "gochu-korean-bbq": local("/photos/gochu-dining2.webp", 1669, 942),
@@ -116,12 +112,14 @@ const OWN_PHOTOS: Record<string, { src: string; width: number; height: number }>
   "perfumeplay": local("/photos/perfume-play.jpg", 885, 885),
   "puppy-yoga-singapore": local("/photos/puppy-yoga.jpg", 495, 619),
   "ri-ri-cha": local("/photos/ri-ri-cha.jpg", 1200, 800),
+  "royal-albatross": local("/photos/royal-albatross.webp", 768, 765),
   "scentopia": local("/photos/scentopia.jpg", 640, 791),
   "shinjuku-restaurant": local("/photos/shinjuku.jpg", 4000, 2925),
   "shu-du-fan-dian": local("/photos/shu-du-fan-dian.jpg", 700, 496),
   "skai": local("/photos/skai.jpg", 678, 452),
   "solace-express-cathay": local("/photos/solace-express-cathay.webp", 382, 510),
   "solace-high-school": local("/photos/solace-high-school.jpg", 416, 738),
+  "spectra-light-show": local("/photos/spectra-show.png", 670, 415),
   "srisun-express": local("/photos/srisun-express.jpg", 592, 418),
   "standardphotostudio": local("/photos/standard-photo.webp", 382, 510),
   "sweedy": local("/photos/sweedy.jpeg", 2048, 1536),
@@ -134,14 +132,19 @@ const OWN_PHOTOS: Record<string, { src: string; width: number; height: number }>
   "wanyoo-esports": local("/photos/wanyoo-esports.jpg", 1200, 600),
   "wild-wild-wet": local("/photos/wild-wild-wet.jpg", 547, 365),
   "wildseed-bar-and-grill": local("/photos/wildseed-bar-and-grill.jpg", 1840, 1035),
-  "wonderland-upside-down": local("/photos/wonderland-upside-down.jpg", 1400, 1050),
+  "wonderland-upside-down": local("/photos/wonderland-upside-down2.jpg", 1295, 728),
   "yanhuo-restaurant": local("/photos/yanhuo.jpg", 1400, 1000),
 };
 
+/** Photo for a built-in place, if it has its own (used to seed the database). */
+export function builtinPlacePhoto(slug: string, name: string): Photo | undefined {
+  const own = OWN_PHOTOS[slug];
+  if (own) return { kind: "local", ...own, alt: name };
+  return PLACE_PHOTOS[slug];
+}
+
 export function placePhoto(place: Place): Photo {
-  const own = OWN_PHOTOS[place.slug];
-  if (own) return { kind: "local", ...own, alt: place.name };
-  return PLACE_PHOTOS[place.slug] ?? CATEGORY_PHOTOS[place.category];
+  return place.photo ?? CATEGORY_PHOTOS[place.category];
 }
 
 const IDEA_PHOTOS: Record<string, Photo> = {
@@ -156,8 +159,13 @@ const IDEA_PHOTOS: Record<string, Photo> = {
   "airport-after-hours": PHOTOS.jewel,
 };
 
+/** Cover photo for a built-in date idea (used to seed the database). */
+export function builtinIdeaPhoto(slug: string): Photo | undefined {
+  return IDEA_PHOTOS[slug];
+}
+
 export function ideaPhoto(idea: SuggestedDate): Photo {
-  return IDEA_PHOTOS[idea.slug] ?? PHOTOS.heroBay;
+  return idea.photo ?? PHOTOS.heroBay;
 }
 
 export function unsplashUrl(id: string, width: number) {

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useApp } from "@/components/app-state";
 import { PlaceCard } from "@/components/place-card";
-import { PLACE_BY_SLUG } from "@/data/places";
+import { useCatalogue } from "@/components/catalogue";
 import { formatSGD, formatTime, schedule } from "@/lib/itinerary";
 import { supabaseConfigured } from "@/lib/supabase/client";
 import type { Itinerary } from "@/lib/types";
@@ -15,7 +15,8 @@ function PlanCard({ plan }: { plan: Itinerary }) {
   const { loadDraft, deletePlan } = useApp();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
-  const s = schedule(plan);
+  const cat = useCatalogue();
+  const s = schedule(plan, cat);
   const names = s.stops.map((x) => x.place.name);
 
   return (
@@ -73,7 +74,8 @@ function PlanCard({ plan }: { plan: Itinerary }) {
 
 export function SavedClient() {
   const { ready, user, favorites, plans, signOut } = useApp();
-  const favPlaces = favorites.map((s) => PLACE_BY_SLUG[s]).filter(Boolean);
+  const cat = useCatalogue();
+  const favPlaces = favorites.map((s) => cat.placeBySlug[s]).filter(Boolean);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

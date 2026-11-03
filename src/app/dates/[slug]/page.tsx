@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Photo } from "@/components/photo";
 import { BUDGETS, OCCASIONS } from "@/data/categories";
 import { ideaPhoto, placePhoto } from "@/data/photos";
-import { SUGGESTED_BY_SLUG, SUGGESTED_DATES } from "@/data/suggested-dates";
+import { getCatalogue } from "@/lib/catalogue-server";
 import {
   budgetBand,
   formatDuration,
@@ -17,22 +17,23 @@ import {
 } from "@/lib/itinerary";
 import { RemixButton, RouteMap } from "./remix";
 
-export function generateStaticParams() {
-  return SUGGESTED_DATES.map((d) => ({ slug: d.slug }));
+export async function generateStaticParams() {
+  return (await getCatalogue()).ideas.map((d) => ({ slug: d.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const d = SUGGESTED_BY_SLUG[(await params).slug];
+  const d = (await getCatalogue()).ideaBySlug[(await params).slug];
   return d ? { title: d.title, description: d.description } : {};
 }
 
 export default async function DateIdeaPage({ params }: { params: Promise<{ slug: string }> }) {
-  const idea = SUGGESTED_BY_SLUG[(await params).slug];
+  const cat = await getCatalogue();
+  const idea = cat.ideaBySlug[(await params).slug];
   if (!idea) notFound();
-  const plan = schedule(itineraryFromSuggestion(idea));
+  const plan = schedule(itineraryFromSuggestion(idea, cat), cat);
   const tags = [
     ...idea.occasions.map((o) => OCCASIONS.find((x) => x.id === o)?.label),
-    BUDGETS.find((b) => b.id === budgetBand(suggestionCost(idea)))?.label,
+    BUDGETS.find((b) => b.id === budgetBand(suggestionCost(idea, cat)))?.label,
   ].filter(Boolean);
 
   return (
@@ -48,7 +49,7 @@ export default async function DateIdeaPage({ params }: { params: Promise<{ slug:
               <ArrowLeft size={16} aria-hidden /> Date ideas
             </Link>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/80">
-              No. {String(SUGGESTED_DATES.indexOf(idea) + 1).padStart(2, "0")} · {idea.tagline}
+              No. {String(cat.ideas.indexOf(idea) + 1).padStart(2, "0")} · {idea.tagline}
             </p>
             <h1 className="mt-3 max-w-3xl text-5xl sm:text-7xl">{idea.title}</h1>
             <p className="mt-4 max-w-xl text-lg text-white/90">{idea.description}</p>

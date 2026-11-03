@@ -6,7 +6,7 @@ import { useApp } from "@/components/app-state";
 import { Photo } from "@/components/photo";
 import { CATEGORY_BY_ID } from "@/data/categories";
 import { placePhoto } from "@/data/photos";
-import { PLACES } from "@/data/places";
+import { useCatalogue } from "@/components/catalogue";
 import { alternatives, costLabel, distanceKm, nearby } from "@/lib/itinerary";
 import type { Place } from "@/lib/types";
 
@@ -32,6 +32,7 @@ export function PlacePicker({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const { favorites } = useApp();
+  const cat = useCatalogue();
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<"all" | "activity" | "food">("all");
 
@@ -40,18 +41,18 @@ export function PlacePicker({
   }, []);
 
   const picks = useMemo(() => {
-    if (replacing) return { label: "Similar spots nearby", items: alternatives(replacing, [...exclude, replacing.slug]) };
+    if (replacing) return { label: "Similar spots nearby", items: alternatives(replacing, cat, [...exclude, replacing.slug]) };
     if (anchor) {
       const want = anchor.kind === "activity" ? "food" : "activity";
-      return { label: `Close to ${anchor.name}`, items: nearby(anchor, 6, (p) => p.kind === want && !exclude.includes(p.slug)) };
+      return { label: `Close to ${anchor.name}`, items: nearby(anchor, cat, 6, (p) => p.kind === want && !exclude.includes(p.slug)) };
     }
-    const favs = PLACES.filter((p) => favorites.includes(p.slug));
+    const favs = cat.places.filter((p) => favorites.includes(p.slug));
     return { label: "Your favourites", items: favs.slice(0, 6) };
   }, [replacing, anchor, exclude, favorites]);
 
   const results = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-    return PLACES.filter((p) => p.status !== "closed")
+    return cat.places.filter((p) => p.status !== "closed")
       .filter((p) => kind === "all" || p.kind === kind)
       .filter((p) => {
         if (!words.length) return true;

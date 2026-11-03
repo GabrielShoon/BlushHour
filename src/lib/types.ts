@@ -52,7 +52,7 @@ export interface Place {
   vibes: Vibe[];
   timeOfDay: TimeOfDay;
   indoor: boolean;
-  /** Opening hours, only when verified. Otherwise the UI asks users to check. */
+  /** Opening hours, if known. Not shown yet; place pages link to Google Maps for hours. */
   hours?: string;
   branches?: string[];
   status?: "open" | "closed";
@@ -60,7 +60,17 @@ export interface Place {
   source: Source;
   /** True when price/details were filled in by BlushHour and still need checking. */
   unverified?: boolean;
+  /** Own photo; without one the category's stock photo is used. */
+  photo?: Photo;
 }
+
+/**
+ * A curator photo (local file or uploaded to storage, served through
+ * next/image) or a free Unsplash photo served from Unsplash's CDN.
+ */
+export type Photo =
+  | { kind: "unsplash"; id: string; alt: string }
+  | { kind: "local"; src: string; width: number; height: number; alt: string };
 
 export interface Category {
   id: CategoryId;
@@ -95,7 +105,9 @@ export interface SuggestedDate {
   occasions: Occasion[];
   startTime: string;
   stops: { slug: string; durationMins?: number }[];
-  hue: Category["hue"];
+  hue?: Category["hue"];
+  /** Cover photo; without one a default skyline photo is used. */
+  photo?: Photo;
 }
 
 export type Occasion =

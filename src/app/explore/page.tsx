@@ -23,13 +23,13 @@ export default async function ExplorePage({
     collection: one("collection"),
     vibe: one("vibe"),
     area: one("area"),
-    maxPrice: one("price") ? Number(one("price")) : 4,
+    maxCost: tab === "places" && one("max") ? Number(one("max")) : null,
     time: one("time"),
     indoor: one("indoor") === "1",
     sort: (one("sort") as ExploreState["sort"]) || "recommended",
     mood: one("mood"),
     occasion: one("occasion"),
-    budget: one("budget"),
+    ideaMax: tab === "ideas" && one("max") ? Number(one("max")) : null,
   };
 
   return (

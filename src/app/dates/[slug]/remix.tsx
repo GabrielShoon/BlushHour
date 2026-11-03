@@ -5,23 +5,23 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useApp } from "@/components/app-state";
 import { MapView } from "@/components/map";
-import { PLACE_BY_SLUG } from "@/data/places";
-import { SUGGESTED_BY_SLUG } from "@/data/suggested-dates";
+import { useCatalogue } from "@/components/catalogue";
 import { itineraryFromSuggestion, stopFor } from "@/lib/itinerary";
 
 export function RemixButton({ slug }: { slug: string }) {
   const { draft, loadDraft, ready } = useApp();
   const router = useRouter();
   const [asking, setAsking] = useState(false);
-  const idea = SUGGESTED_BY_SLUG[slug];
+  const cat = useCatalogue();
+  const idea = cat.ideaBySlug[slug];
 
   const replace = () => {
-    loadDraft(itineraryFromSuggestion(idea));
+    loadDraft(itineraryFromSuggestion(idea, cat));
     router.push("/plan");
   };
   const append = () => {
     loadDraft(
-      { ...draft, stops: [...draft.stops, ...idea.stops.map((s) => stopFor(s.slug, s.durationMins))] },
+      { ...draft, stops: [...draft.stops, ...idea.stops.map((s) => stopFor(cat, s.slug, s.durationMins))] },
       { keepId: true },
     );
     router.push("/plan");
@@ -60,8 +60,9 @@ export function RemixButton({ slug }: { slug: string }) {
 }
 
 export function RouteMap({ slug }: { slug: string }) {
-  const points = SUGGESTED_BY_SLUG[slug].stops
-    .map((s) => PLACE_BY_SLUG[s.slug])
+  const cat = useCatalogue();
+  const points = (cat.ideaBySlug[slug]?.stops ?? [])
+    .map((s) => cat.placeBySlug[s.slug])
     .filter((p) => p?.lat != null)
     .map((p, i) => ({ lat: p.lat!, lng: p.lng!, title: p.name, label: String(i + 1), href: `/places/${p.slug}` }));
   return <MapView points={points} route className="h-96 w-full lg:h-[32rem]" />;

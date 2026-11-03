@@ -25,7 +25,7 @@ function Count({ n }: { n: number }) {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { draft, user, ready, favorites } = useApp();
+  const { draft, user, ready, favorites, isAdmin } = useApp();
   const count = ready ? draft.stops.length : 0;
   const active = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
@@ -58,6 +58,17 @@ export function SiteHeader() {
             </Link>
           </nav>
           <div className="flex items-center justify-end gap-1">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                aria-current={active("/admin") ? "page" : undefined}
+                className={`mr-1 inline-flex h-9 items-center rounded-full border px-3 text-xs font-semibold uppercase tracking-[0.12em] transition ${
+                  active("/admin") ? "border-ink bg-ink text-bg" : "border-line text-ink-soft hover:border-ink hover:text-ink"
+                }`}
+              >
+                Admin
+              </Link>
+            )}
             <Link
               href="/saved"
               aria-label={`Saved${ready && favorites.length ? `, ${favorites.length} favourites` : ""}`}

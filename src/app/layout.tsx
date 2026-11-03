@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, Instrument_Serif } from "next/font/google";
 import { AppStateProvider } from "@/components/app-state";
+import { CatalogueProvider } from "@/components/catalogue";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/toaster";
+import { getCatalogue } from "@/lib/catalogue-server";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
@@ -38,10 +40,12 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { places, ideas } = await getCatalogue();
   return (
     <html lang="en-SG" className={`${serif.variable} ${sans.variable}`}>
       <body className="min-h-dvh flex flex-col">
+        <CatalogueProvider places={places} ideas={ideas}>
         <AppStateProvider>
           <a
             href="#main"
@@ -56,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteFooter />
           <Toaster />
         </AppStateProvider>
+        </CatalogueProvider>
       </body>
     </html>
   );

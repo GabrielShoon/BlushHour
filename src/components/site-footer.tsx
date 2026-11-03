@@ -21,13 +21,6 @@ export function SiteFooter() {
         <div className="text-sm text-ink-soft">
           <p className="eyebrow mb-3">Good to know</p>
           <p>Prices, hours and locations are estimates. Check with the venue before you go.</p>
-          <p className="mt-2">
-            Photos from{" "}
-            <a href="https://unsplash.com" className="underline underline-offset-2 hover:text-rose" rel="noopener noreferrer" target="_blank">
-              Unsplash
-            </a>
-            , chosen to set the mood. Not every photo shows the exact venue.
-          </p>
         </div>
       </div>
     </footer>

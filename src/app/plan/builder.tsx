@@ -39,8 +39,7 @@ import { Photo } from "@/components/photo";
 import { MapView } from "@/components/map";
 import { CATEGORY_BY_ID } from "@/data/categories";
 import { placePhoto } from "@/data/photos";
-import { PLACE_BY_SLUG } from "@/data/places";
-import { SUGGESTED_DATES } from "@/data/suggested-dates";
+import { useCatalogue } from "@/components/catalogue";
 import {
   costLabel,
   formatDuration,
@@ -192,6 +191,7 @@ function StopCard({
 }
 
 function EmptyBuilder({ onAdd }: { onAdd: () => void }) {
+  const { ideas } = useCatalogue();
   return (
     <div className="border-y border-line py-12 text-center sm:py-16">
       <p className="eyebrow">Your date</p>
@@ -218,7 +218,7 @@ function EmptyBuilder({ onAdd }: { onAdd: () => void }) {
       </div>
       <p className="eyebrow mt-10">Or start from an idea</p>
       <ul className="mt-3 flex flex-wrap justify-center gap-2">
-        {SUGGESTED_DATES.slice(0, 4).map((d) => (
+        {ideas.slice(0, 4).map((d) => (
           <li key={d.slug}>
             <Link
               href={`/dates/${d.slug}`}
@@ -241,7 +241,8 @@ export function Builder() {
   const [saving, setSaving] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
-  const plan = useMemo(() => schedule(draft), [draft]);
+  const cat = useCatalogue();
+  const plan = useMemo(() => schedule(draft, cat), [draft, cat]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -492,17 +493,17 @@ export function Builder() {
 
       {picker && (
         <PlacePicker
-          title={replacing ? `Swap ${PLACE_BY_SLUG[replacing.slug]?.name}` : "Add a stop"}
-          replacing={replacing ? PLACE_BY_SLUG[replacing.slug] : undefined}
+          title={replacing ? `Swap ${cat.placeBySlug[replacing.slug]?.name}` : "Add a stop"}
+          replacing={replacing ? cat.placeBySlug[replacing.slug] : undefined}
           anchor={plan.stops.at(-1)?.place}
           exclude={draft.stops.map((s) => s.slug)}
           onPick={(slug) => {
             if (picker.mode === "replace") {
               replaceStop(picker.stopId, slug);
-              notify(`Swapped in ${PLACE_BY_SLUG[slug].name}`);
+              notify(`Swapped in ${cat.placeBySlug[slug].name}`);
             } else {
               app.addToDraft(slug);
-              notify(`Added ${PLACE_BY_SLUG[slug].name}`);
+              notify(`Added ${cat.placeBySlug[slug].name}`);
             }
             setPicker(null);
           }}

@@ -11,9 +11,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { PLACE_BY_SLUG } from "@/data/places";
 import { newItinerary, stopFor } from "@/lib/itinerary";
 import { getSupabase } from "@/lib/supabase/client";
+import { useCatalogue } from "./catalogue";
 import type { Itinerary, ItineraryStop } from "@/lib/types";
 
 const KEYS = { draft: "bh:draft", favs: "bh:favs", plans: "bh:plans" };
@@ -63,6 +63,20 @@ const toRow = (it: Itinerary, userId: string) => ({
   updated_at: it.updatedAt,
 });
 
+type SyncError = { code?: string; message?: string };
+
+/**
+ * User-facing message for a failed Supabase call. Logs the real error so a
+ * setup problem (missing table or permissions) isn't mistaken for a bad connection.
+ */
+function syncMessage(error: SyncError, action: string) {
+  console.error(`BlushHour: couldn't ${action}`, error);
+  if (error.code === "42501" || error.code === "42P01" || error.code === "PGRST205") {
+    return `Couldn't ${action}: account storage isn't set up yet.`;
+  }
+  return `Couldn't ${action}. Check your connection and try again.`;
+}
+
 interface ToastAction {
   label: string;
   href?: string;
@@ -78,6 +92,8 @@ interface Toast {
 interface AppState {
   ready: boolean;
   user: User | null;
+  /** Signed in with an admin email (checked by the database). */
+  isAdmin: boolean;
   draft: Itinerary;
   favorites: string[];
   plans: Itinerary[];
@@ -109,8 +125,10 @@ export function useApp() {
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  const cat = useCatalogue();
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [draft, setDraft] = useState<Itinerary>(() => newItinerary());
   const [favorites, setFavorites] = useState<string[]>([]);
   const [plans, setPlans] = useState<Itinerary[]>([]);
@@ -131,10 +149,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   // Load local state once on mount.
   useEffect(() => {
     const d = read<Itinerary | null>(KEYS.draft, null);
-    if (d) setDraft({ ...d, stops: d.stops.filter((s) => PLACE_BY_SLUG[s.slug]) });
+    if (d) setDraft({ ...d, stops: d.stops.filter((s) => cat.placeBySlug[s.slug]) });
     setFavorites(read<string[]>(KEYS.favs, []));
     setPlans(read<Itinerary[]>(KEYS.plans, []));
     setReady(true);
+    // Only on mount: later catalogue updates shouldn't wipe the draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -149,6 +169,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const { data: sub } = sb.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Admin rights are checked by the database (public.is_admin), which also enforces them.
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb || !user) {
+      setIsAdmin(false);
+      return;
+    }
+    sb.rpc("is_admin").then(({ data }: { data: boolean | null }) => setIsAdmin(data === true));
+  }, [user]);
 
   useEffect(() => {
     const sb = getSupabase();
@@ -186,12 +216,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const addToDraft = useCallback(
     (slug: string) => {
-      const p = PLACE_BY_SLUG[slug];
+      const p = cat.placeBySlug[slug];
       if (!p) return;
-      setDraft((d) => touch({ ...d, stops: [...d.stops, stopFor(slug)] }));
+      setDraft((d) => touch({ ...d, stops: [...d.stops, stopFor(cat, slug)] }));
       notify(`${p.name} added to your date`, { href: "/plan", label: "Open builder" });
     },
-    [notify],
+    [cat, notify],
   );
 
   const removeStop = useCallback(
@@ -202,9 +232,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const replaceStop = useCallback(
     (id: string, slug: string) =>
       setDraft((d) =>
-        touch({ ...d, stops: d.stops.map((s) => (s.id === id ? stopFor(slug) : s)) }),
+        touch({ ...d, stops: d.stops.map((s) => (s.id === id ? stopFor(cat, slug) : s)) }),
       ),
-    [],
+    [cat],
   );
 
   const moveStop = useCallback((from: number, to: number) => {
@@ -249,10 +279,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const q = on
           ? sb.from("favorites").delete().match({ user_id: user.id, place_slug: slug })
           : sb.from("favorites").insert({ user_id: user.id, place_slug: slug });
-        q.then(({ error }: { error: unknown }) => {
+        q.then(({ error }: { error: SyncError | null }) => {
           if (error) {
             setFavorites(favorites);
-            notify("Couldn't sync that favourite. Try again in a moment.");
+            notify(syncMessage(error, "sync that favourite"));
           }
         });
       } else {
@@ -269,7 +299,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (sb && user) {
       const { error } = await sb.from("date_plans").upsert(toRow(it, user.id));
       if (error) {
-        notify("Couldn't save your date. Check your connection and try again.");
+        notify(syncMessage(error, "save your date"));
         return false;
       }
     }
@@ -289,7 +319,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (sb && user) {
         const { error } = await sb.from("date_plans").delete().match({ id, user_id: user.id });
         if (error) {
-          notify("Couldn't delete that date. Try again.");
+          notify(syncMessage(error, "delete that date"));
           return;
         }
       }
@@ -312,6 +342,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     () => ({
       ready,
       user,
+      isAdmin,
       draft,
       favorites,
       plans,
@@ -334,7 +365,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       dismissToast,
     }),
     [
-      ready, user, draft, favorites, plans, toast, addToDraft, removeStop, replaceStop, moveStop,
+      ready, user, isAdmin, draft, favorites, plans, toast, addToDraft, removeStop, replaceStop, moveStop,
       setDuration, updateDraft, loadDraft, clearDraft, toggleFavorite, saveDraft, deletePlan, signOut,
       notify, dismissToast,
     ],
